@@ -1,0 +1,12 @@
+{application, uffda,
+ [
+  {description, "Uffda Service registry"},
+  {vsn, "0.1.0"},
+  {id, "uffda"},
+  {registered, []},
+  {applications, [kernel, stdlib, lager]},
+  {included_applications, [lager]},
+  {mod, {uffda, []}},
+  {env, []}
+ ]
+}.
