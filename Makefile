@@ -1,7 +1,6 @@
 PROJECT = uffda
 
-DEPS = erlang_commons proper
-dep_erlang_commons = https://github.com/jaynel/erlang_commons
+DEPS = proper
 dep_proper = https://github.com/manopapad/proper
 
 # Needed for testing
@@ -11,7 +10,7 @@ CT_SUITES = uffda_basic
 # Specifies where to look when building the plt
 ALL_DEPS_DIRS = --output_plt ./.uffda.plt -pa deps/*/ebin ebin
 
-SERVER := erl -pa ebin -pa deps/*/ebin -smp enable -s lager -setcookie CISFORCOOKIE
+SERVER := erl -pa ebin -pa deps/*/ebin -smp enable -setcookie CISFORCOOKIE
 HOST := `hostname` 
 
 

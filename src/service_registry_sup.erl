@@ -3,9 +3,12 @@
 
 -export([start_link/0, init/1]).
 
--include_lib("erlang_commons/include/supervisor_macros.hrl").
--include_lib("erlang_commons/include/tts_sup_types.hrl").
-
+-define(CHILD(__Name, __Mod, __Args), {__Name, 
+                                       {__Mod, start_link, __Args},
+                                       permanent, 
+                                       2000, 
+                                       worker,
+                                       [__Mod]}).
 %%-------------------------------------------------------------------
 %% PUBLIC API
 %%-------------------------------------------------------------------
@@ -21,8 +24,8 @@ start_link() ->
 %% Supervisor behaviour callbacks
 %%----------------------------------------------------------------------
 %% @private
--spec init({}) -> sup_init_return(). 
-
+-spec init({}) -> {ok, {{supervisor:strategy(), non_neg_integer(), non_neg_integer()},
+                        [supervisor:child_spec()]}}.
 init({}) -> 
     FSM_Spec = ?CHILD(service_fsm, service_fsm, []),
     {ok, {{simple_one_for_one, 5, 60}, [FSM_Spec]}}.
