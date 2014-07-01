@@ -82,6 +82,8 @@ handle_sync_event(Event, _From, StateName, StateData) ->
 
 -spec handle_info(term(), atom(), term()) -> {next_state, atom(), term()}
                                              | {stop, atom(), term()}.
+handle_info({'DOWN', _MonitorRef, process, Pid, _Info}, _StateName, {Name, Pid}) ->
+    {next_state, 'DOWN', {Name, undefined}};
 handle_info(Info, StateName, StateData) ->
     lager:error("~p:unexpected info \"~p\", state data was ~p", [?MODULE, Info, StateData]),
     {next_state, StateName, StateData}.
