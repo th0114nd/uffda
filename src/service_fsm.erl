@@ -12,6 +12,7 @@
          'DOWN'/2]).
 
 -type service() :: atom().
+-type state() :: term().
 
 -spec fsm_name_from_service(service()) -> atom().
 fsm_name_from_service(Service) ->
@@ -34,7 +35,7 @@ start_link(Service, ServicePid) ->
 'STARTING_UP'(go_up, StateData) -> {next_state, 'UP', StateData};
 'STARTING_UP'(wait, StateData) -> {next_state, 'DOWN', StateData};
 'STARTING_UP'(Event, StateData) ->
-	lager:error("~p: unexpected event \"~p\", state was ~p", [?MODULE, Event, StateData]),
+	error_logger:error_msg("~p: unexpected event \"~p\", state was ~p", [?MODULE, Event, StateData]),
     {next_state, 'STARTING_UP', StateData}.
 
 %% A Service is up and running
@@ -42,7 +43,7 @@ start_link(Service, ServicePid) ->
                             | {stop, term(), term()}.
 'UP'(go_down, StateData) -> {next_state, 'DOWN', StateData};
 'UP'(Event, StateData) ->
-	lager:error("~p: unexpected event \"~p\", state was \"~p\" state data was \"~p\"",
+	error_logger:error_msg("~p: unexpected event \"~p\", state was \"~p\" state data was \"~p\"",
         [?MODULE, Event, 'UP', StateData]),
 	{next_state, 'UP', StateData}.
 
@@ -51,7 +52,7 @@ start_link(Service, ServicePid) ->
                               | {stop, term(), term()}.
 'DOWN'(reset, StateData) -> {next_state, 'UP', StateData};
 'DOWN'(Event, StateData) ->
-    lager:error("~p: unexpected event \"~p\", state was \"~p\", state data was \"~p\"",
+    error_logger:error_msg("~p: unexpected event \"~p\", state was \"~p\", state data was \"~p\"",
         [?MODULE, Event, 'DOWN', StateData]),
     {next_state, 'DOWN', StateData}.
 
@@ -68,16 +69,16 @@ init(Args) ->
 -spec handle_event(term(), atom(), term()) -> {next_state, atom(), term()}
                                               | {stop, atom(), term()}.
 handle_event(Event, StateName, StateData) ->
-    lager:error("~p: unexpected event \"~p\", state data was ~p",
+    error_logger:error_msg("~p: unexpected event \"~p\", state data was ~p",
         [?MODULE, Event, StateData]),
     {next_state, StateName, StateData}.
 
 -spec handle_sync_event(term(), {pid(), term()}, atom(), term()) ->
-    {next_state, atom(), term()} | {stop, term(), term()}.
+    {reply, term(), atom(), state()}.
 handle_sync_event(get_state, _From, StateName, StateData) ->
     {reply, StateName, StateName, StateData};
 handle_sync_event(Event, _From, StateName, StateData) ->
-    lager:error("~p:unexpected event \"~p\", state data was ~p", [?MODULE, Event, StateData]),
+    error_logger:error_msg("~p:unexpected event \"~p\", state data was ~p", [?MODULE, Event, StateData]),
     {reply, {error, unexpected_message}, StateName, StateData}.
 
 -spec handle_info(term(), atom(), term()) -> {next_state, atom(), term()}
@@ -85,17 +86,17 @@ handle_sync_event(Event, _From, StateName, StateData) ->
 handle_info({'DOWN', _MonitorRef, process, Pid, _Info}, _StateName, {Name, Pid}) ->
     {next_state, 'DOWN', {Name, undefined}};
 handle_info(Info, StateName, StateData) ->
-    lager:error("~p:unexpected info \"~p\", state data was ~p", [?MODULE, Info, StateData]),
+    error_logger:error_msg("~p:unexpected info \"~p\", state data was ~p", [?MODULE, Info, StateData]),
     {next_state, StateName, StateData}.
 
 -spec terminate(term(), atom(), term()) -> ok | {stop, unexpected_message, term()}.
 terminate(normal, _, _) -> ok;
 terminate(shutdown, _, _) -> ok;
 terminate(Reason, _StateName, StateData) ->
-    lager:error("~p:unexpected reason \"~p\", state data was ~p", [?MODULE, Reason, StateData]),
+    error_logger:error_msg("~p:unexpected reason \"~p\", state data was ~p", [?MODULE, Reason, StateData]),
     ok.
 
 -spec code_change(term(), atom(), term(), term()) -> {ok, atom(), term()}.
 code_change(OldVsn, StateName, StateData, _Extra) ->
-    lager:error("~p:unexpected version \"~p\", state data was ~p", [?MODULE, OldVsn, StateData]),
+    error_logger:error_msg("~p:unexpected version \"~p\", state data was ~p", [?MODULE, OldVsn, StateData]),
     {ok, StateName, StateData}.

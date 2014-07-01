@@ -29,6 +29,6 @@ stop(_State) ->
 	case application:get_env(?MODULE, halt_on_stop) of
 		{ok, false} -> ok;
 		_ ->
-    		_ = lager:critical("Application ~p stopped. Halting!", [?MODULE]),
+    		_ = error_logger:error_msg("Application ~p stopped. Halting!", [?MODULE]),
     		erlang:halt(1)
 	end.
