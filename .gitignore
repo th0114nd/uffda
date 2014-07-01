@@ -9,3 +9,4 @@ rel
 *.plt
 *.log
 erl_crash.dump
+.erlang.mk.packages.*

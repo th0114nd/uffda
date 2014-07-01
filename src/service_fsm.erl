@@ -62,8 +62,8 @@ start_link(Service, ServicePid) ->
 
 -spec init(term()) -> {ok, atom(), term()}.
 init(Args) ->
- %%   [_Name, Pid] = Args,
- %%   monitor(process, Pid),
+    [_Name, Pid] = Args,
+    monitor(process, Pid),
     {ok, 'STARTING_UP', Args}.
 
 -spec handle_event(term(), atom(), term()) -> {next_state, atom(), term()}
