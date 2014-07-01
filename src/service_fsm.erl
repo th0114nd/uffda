@@ -11,8 +11,7 @@
          'UP'/2,
          'DOWN'/2]).
 
--type service() :: atom().
--type state() :: term().
+-include("uffda.hrl").
 
 -spec fsm_name_from_service(service()) -> atom().
 fsm_name_from_service(Service) ->
@@ -50,9 +49,9 @@ start_link(Service, ServicePid) ->
 %% A Service is down
 -spec 'DOWN'(term(), term()) -> {next_state, atom(), term()}
                               | {stop, term(), term()}.
-'DOWN'(reset, StateData) -> {next_state, 'UP', StateData};
+'DOWN'(reset, StateData) -> {next_state, 'STARTING_UP', StateData};
 'DOWN'(Event, StateData) ->
-    error_logger:error_msg("~p: unexpected event \"~p\", state was \"~p\", state data was \"~p\"",
+    error_logger:error_msg("~p: unexpected \"~p\", state was \"~p\", state data was \"~p\"",
         [?MODULE, Event, 'DOWN', StateData]),
     {next_state, 'DOWN', StateData}.
 
@@ -62,9 +61,9 @@ start_link(Service, ServicePid) ->
 
 -spec init(term()) -> {ok, atom(), term()}.
 init(Args) ->
-    [_Name, Pid] = Args,
+    [Name, Pid] = Args,
     monitor(process, Pid),
-    {ok, 'STARTING_UP', Args}.
+    {ok, 'STARTING_UP', {Name, Pid}}.
 
 -spec handle_event(term(), atom(), term()) -> {next_state, atom(), term()}
                                               | {stop, atom(), term()}.
@@ -74,11 +73,12 @@ handle_event(Event, StateName, StateData) ->
     {next_state, StateName, StateData}.
 
 -spec handle_sync_event(term(), {pid(), term()}, atom(), term()) ->
-    {reply, term(), atom(), state()}.
+    {reply, term(), atom(), fsmstate()}.
 handle_sync_event(get_state, _From, StateName, StateData) ->
     {reply, StateName, StateName, StateData};
 handle_sync_event(Event, _From, StateName, StateData) ->
-    error_logger:error_msg("~p:unexpected event \"~p\", state data was ~p", [?MODULE, Event, StateData]),
+    error_logger:error_msg("~p:unexpected event \"~p\", state data was ~p", 
+        [?MODULE, Event, StateData]),
     {reply, {error, unexpected_message}, StateName, StateData}.
 
 -spec handle_info(term(), atom(), term()) -> {next_state, atom(), term()}
@@ -86,17 +86,20 @@ handle_sync_event(Event, _From, StateName, StateData) ->
 handle_info({'DOWN', _MonitorRef, process, Pid, _Info}, _StateName, {Name, Pid}) ->
     {next_state, 'DOWN', {Name, undefined}};
 handle_info(Info, StateName, StateData) ->
-    error_logger:error_msg("~p:unexpected info \"~p\", state data was ~p", [?MODULE, Info, StateData]),
+    error_logger:error_msg("~p:unexpected info \"~p\", state data was ~p", 
+        [?MODULE, Info, StateData]),
     {next_state, StateName, StateData}.
 
 -spec terminate(term(), atom(), term()) -> ok | {stop, unexpected_message, term()}.
 terminate(normal, _, _) -> ok;
 terminate(shutdown, _, _) -> ok;
 terminate(Reason, _StateName, StateData) ->
-    error_logger:error_msg("~p:unexpected reason \"~p\", state data was ~p", [?MODULE, Reason, StateData]),
+    error_logger:error_msg("~p:unexpected reason \"~p\", state data was ~p", 
+        [?MODULE, Reason, StateData]),
     ok.
 
 -spec code_change(term(), atom(), term(), term()) -> {ok, atom(), term()}.
 code_change(OldVsn, StateName, StateData, _Extra) ->
-    error_logger:error_msg("~p:unexpected version \"~p\", state data was ~p", [?MODULE, OldVsn, StateData]),
+    error_logger:error_msg("~p:unexpected version \"~p\", state data was ~p", 
+        [?MODULE, OldVsn, StateData]),
     {ok, StateName, StateData}.

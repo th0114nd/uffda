@@ -1,7 +1,8 @@
 -module(sr_client).
 
 -export([register_me/1, get_state/1, go_up/1, go_down/1, reset/1, wait/1]).
--type service() :: atom().
+
+-include("uffda.hrl").
 
 -spec register_me(service()) -> {ok, pid()} | {error, term()}.
 register_me(Service) ->

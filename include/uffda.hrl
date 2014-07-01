@@ -1,0 +1,2 @@
+-type service() :: atom().
+-type fsmstate() :: {service(), pid()}.
