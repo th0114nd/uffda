@@ -115,5 +115,5 @@ crash(_Config) ->
     ok = expect_msg('UP'),
     'UP' = sr_client:get_state(bar),
     Bar ! die,
-    expect_msg({ok, bar}),
+    erlang:yield(),
     'DOWN' = sr_client:get_state(bar).
