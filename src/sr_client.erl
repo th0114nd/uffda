@@ -1,6 +1,7 @@
 -module(sr_client).
 
 -export([register_me/1, get_state/1, go_up/1, go_down/1, reset/1, wait/1]).
+-export([service_loop/1]).
 
 -include("uffda.hrl").
 
