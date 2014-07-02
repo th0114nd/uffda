@@ -1,2 +1,4 @@
--type service() :: atom().
--type fsmstate() :: {service(), pid()}.
+-type service_name()    :: atom().
+-type service_fsm()     :: atom().
+-type service_pid()     :: pid().
+-type service_fsm_pid() :: pid().
