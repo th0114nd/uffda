@@ -82,7 +82,7 @@ handle_event(Event, StateName, StateData) ->
     {next_state, StateName, StateData}.
 
 -spec handle_sync_event(term(), {pid(), term()}, atom(), term()) ->
-    {reply, term(), atom(), state()}.
+    {reply, term(), atom(), fsmstate()}.
 handle_sync_event({re_init, ServicePid}, _From, _StateName, #state_data{name=Name} = StateData) ->
     {reply, ok, 'STARTING_UP', reinitialize(Name, ServicePid, StateData)};
 handle_sync_event(get_state, _From, StateName, StateData) ->

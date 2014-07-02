@@ -1,7 +1,6 @@
 -module(sr_client).
 
 -export([register_me/1, get_state/1, go_up/1, go_down/1, reset/1, wait/1]).
--export([service_loop/1]).
 
 -include("uffda.hrl").
 
@@ -42,15 +41,3 @@ reset(Service) ->
 wait(Service) ->
     FSM = service_fsm:fsm_name_from_service(Service),
     gen_fsm:send_event(FSM, wait).
-
--spec service_loop(atom()) -> term().
-service_loop(Name) ->
-    receive
-        die -> exit(kill);
-        reg -> sr_client:register_me(Name);
-        up -> sr_client:go_up(Name);
-        down -> sr_client:go_down(Name);
-        reset -> sr_client:reset(Name);
-        {state, Pid} -> Pid ! sr_client:get_state(Name)
-    end,
-    service_loop(Name).

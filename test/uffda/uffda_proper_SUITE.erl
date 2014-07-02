@@ -11,4 +11,4 @@ init_per_suite(Config) -> Config.
 end_per_suite(Config) -> Config.
 
 %% Testcases.
-basic() -> ok.
+basic(_) -> ok.
