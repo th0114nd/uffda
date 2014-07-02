@@ -25,8 +25,7 @@
 
 -spec fsm_name_from_service(service_name()) -> service_fsm().
 fsm_name_from_service(Service) ->
-    Name = atom_to_list(Service),
-    list_to_atom(Name ++ "_fsm").
+    list_to_atom(atom_to_list(Service) ++ "_fsm").
 
 -spec start_link(service_name(), service_pid()) -> {ok, service_fsm_pid()}.
 start_link(Service, ServicePid) ->
@@ -43,23 +42,27 @@ start_link(Service, ServicePid) ->
 'STARTING_UP'(go_up, StateData) -> {next_state, 'UP', StateData};
 'STARTING_UP'(wait, StateData) -> {next_state, 'DOWN', StateData};
 'STARTING_UP'(Event, StateData) ->
-	error_logger:error_msg("~p: unexpected event \"~p\", state was ~p", [?MODULE, Event, StateData]),
+    Err_Msg = "~p: unexpected event \"~p\", state was ~p",
+    Err_Args = [?MODULE, Event, StateData],
+	error_logger:error_msg(Err_Msg, Err_Args),
     {next_state, 'STARTING_UP', StateData}.
 
 %% A Service is up and running
 -spec 'UP'(term(), state_data()) -> {next_state, fsm_state_name(), state_data()}.
 'UP'(go_down, StateData) -> {next_state, 'DOWN', StateData};
 'UP'(Event, StateData) ->
-	error_logger:error_msg("~p: unexpected event \"~p\", state was \"~p\" state data was \"~p\"",
-        [?MODULE, Event, 'UP', StateData]),
+    Err_Msg = "~p: unexpected event \"~p\", state was \"~p\" state data was \"~p\"",
+    Err_Args = [?MODULE, Event, 'UP', StateData],
+	error_logger:error_msg(Err_Msg, Err_Args),
 	{next_state, 'UP', StateData}.
 
 %% A Service is down
 -spec 'DOWN'(term(), state_data()) -> {next_state, fsm_state_name(), state_data()}.
 'DOWN'(reset, StateData) -> {next_state, 'STARTING_UP', StateData};
 'DOWN'(Event, StateData) ->
-    error_logger:error_msg("~p: unexpected \"~p\", state was \"~p\", state data was \"~p\"",
-        [?MODULE, Event, 'DOWN', StateData]),
+    Err_Msg = "~p: unexpected \"~p\", state was \"~p\", state data was \"~p\"",
+    Err_Args = [?MODULE, Event, 'DOWN', StateData],
+    error_logger:error_msg(Err_Msg, Err_Args),
     {next_state, 'DOWN', StateData}.
 
 %%---------------------------------------------------
@@ -79,20 +82,23 @@ reinitialize(Service, ServicePid, #state_data{} = OldStateData) ->
                   -> {next_state, fsm_state_name(), state_data()}
                          | {stop, fsm_state_name(), state_data()}.
 handle_event(Event, StateName, StateData) ->
-    error_logger:error_msg("~p: unexpected event \"~p\", state data was ~p",
-        [?MODULE, Event, StateData]),
+    Err_Msg = "~p: unexpected event \"~p\", state data was ~p",
+    Err_Args = [?MODULE, Event, StateData],
+    error_logger:error_msg(Err_Msg, Err_Args),
     {next_state, StateName, StateData}.
 
 -spec handle_sync_event(term(), {pid(), term()}, fsm_state_name(), state_data())
                        -> {reply, term(), fsm_state_name(), state_data()}.
-handle_sync_event({re_init, ServicePid}, _From, _StateName, #state_data{name=Name} = StateData) ->
+handle_sync_event({re_init, ServicePid}, 
+                  _From, _StateName, 
+                  #state_data{name=Name} = StateData) ->
     {reply, ok, 'STARTING_UP', reinitialize(Name, ServicePid, StateData)};
 handle_sync_event(get_state, _From, StateName, StateData) ->
     {reply, StateName, StateName, StateData};
 handle_sync_event(Event, _From, StateName, StateData) ->
-    ErrMsg = "~p:unexpected event \"~p\", state data was ~p",
-    ErrArgs = [?MODULE, Event, StateData],
-    error_logger:error_msg(ErrMsg, ErrArgs),
+    Err_Msg = "~p:unexpected event \"~p\", state data was ~p",
+    Err_Args = [?MODULE, Event, StateData],
+    error_logger:error_msg(Err_Msg, Err_Args),
     {reply, {error, unexpected_message}, StateName, StateData}.
 
 -spec handle_info(term(), fsm_state_name(), term())
@@ -103,20 +109,24 @@ handle_info({'DOWN', MonRef, process, Pid, _Info},
             #state_data{monitor_ref=MonRef, pid=Pid, name=Name} = _StateData) ->
     {next_state, 'DOWN', {Name, undefined}};
 handle_info(Info, StateName, StateData) ->
-    error_logger:error_msg("~p:unexpected info \"~p\", state data was ~p", 
-        [?MODULE, Info, StateData]),
+    Err_Msg = "~p: unexpected info \"~p\", state data was ~p", 
+    Err_Args = [?MODULE, Info, StateData],
+    error_logger:error_msg(Err_Msg, Err_Args),
     {next_state, StateName, StateData}.
 
 -spec terminate(term(), fsm_state_name(), state_data()) -> ok.
 terminate(normal, _, _) -> ok;
 terminate(shutdown, _, _) -> ok;
 terminate(Reason, _StateName, StateData) ->
-    error_logger:error_msg("~p:unexpected reason \"~p\", state data was ~p", 
-        [?MODULE, Reason, StateData]),
+    Err_Msg = "~p:unexpected reason \"~p\", state data was ~p", 
+    Err_Args = [?MODULE, Reason, StateData],
+    error_logger:error_msg(Err_Msg, Err_Args),
     ok.
 
--spec code_change(term(), fsm_state_name(), state_data(), term()) -> {ok, fsm_state_name(), state_data()}.
+-spec code_change(term(), fsm_state_name(), state_data(), term()) -> 
+    {ok, fsm_state_name(), state_data()}.
 code_change(OldVsn, StateName, StateData, _Extra) ->
-    error_logger:error_msg("~p:unexpected version \"~p\", state data was ~p", 
-        [?MODULE, OldVsn, StateData]),
+    Err_Msg = "~p:unexpected version \"~p\", state data was ~p",
+    Err_Args = [?MODULE, OldVsn, StateData],
+    error_logger:error_msg(Err_Msg, Err_Args), 
     {ok, StateName, StateData}.

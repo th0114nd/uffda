@@ -9,6 +9,7 @@
                                        2000, 
                                        worker,
                                        [__Mod]}).
+-define(SERVER, ?MODULE).
 %%-------------------------------------------------------------------
 %% PUBLIC API
 %%-------------------------------------------------------------------
@@ -17,7 +18,7 @@
 -spec start_link() -> {ok, pid()}.
 
 start_link() ->
-    supervisor:start_link({local, ?MODULE}, ?MODULE, {}).
+    supervisor:start_link({local, ?SERVER}, ?MODULE, {}).
 
 start_child(Service, ServPid) ->
     supervisor:start_child(?MODULE, [Service, ServPid]).
