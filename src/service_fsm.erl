@@ -6,6 +6,11 @@
 
 -export([start_link/2, fsm_name_from_service/1]).
 
+-record(state_data,
+        {name :: atom(),
+         pid :: pid(),
+         monitor_ref :: reference()}).
+
 %% States of a Service
 -export(['STARTING_UP'/2,
          'UP'/2,
@@ -61,9 +66,13 @@ start_link(Service, ServicePid) ->
 
 -spec init(term()) -> {ok, atom(), term()}.
 init(Args) ->
-    [Name, Pid] = Args,
-    monitor(process, Pid),
-    {ok, 'STARTING_UP', {Name, Pid}}.
+    [Service, ServicePid] = Args,
+    {ok, 'STARTING_UP', reinitialize(Service, ServicePid, #state_data{})}.
+
+-spec reinitialize(atom(), pid(), reference()) -> term().
+reinitialize(Service, ServicePid, #state_data{} = OldStateData) ->
+    MonRef = erlang:monitor(process, ServicePid),
+    OldStateData#state_data{name = Service, pid = ServicePid, monitor_ref = MonRef}.
 
 -spec handle_event(term(), atom(), term()) -> {next_state, atom(), term()}
                                               | {stop, atom(), term()}.
@@ -73,7 +82,9 @@ handle_event(Event, StateName, StateData) ->
     {next_state, StateName, StateData}.
 
 -spec handle_sync_event(term(), {pid(), term()}, atom(), term()) ->
-    {reply, term(), atom(), fsmstate()}.
+    {reply, term(), atom(), state()}.
+handle_sync_event({re_init, ServicePid}, _From, _StateName, #state_data{name=Name} = StateData) ->
+    {reply, ok, 'STARTING_UP', reinitialize(Name, ServicePid, StateData)};
 handle_sync_event(get_state, _From, StateName, StateData) ->
     {reply, StateName, StateName, StateData};
 handle_sync_event(Event, _From, StateName, StateData) ->
@@ -84,8 +95,7 @@ handle_sync_event(Event, _From, StateName, StateData) ->
 
 -spec handle_info(term(), atom(), term()) -> {next_state, atom(), term()}
                                              | {stop, atom(), term()}.
-handle_info({'DOWN', _MonitorRef, process, Pid, _Info}, _StateName, {Name, Pid}) ->
-    error_logger:error_msg("received the down message"),
+handle_info({'DOWN', MonRef, process, _Pid, _Info}, _StateName, {#state_data{monitor_ref=MonRef}, #state_data{name=Name}} = _StateData) ->
     {next_state, 'DOWN', {Name, undefined}};
 handle_info(Info, StateName, StateData) ->
     error_logger:error_msg("~p:unexpected info \"~p\", state data was ~p", 
