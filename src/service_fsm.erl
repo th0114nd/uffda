@@ -77,13 +77,15 @@ handle_event(Event, StateName, StateData) ->
 handle_sync_event(get_state, _From, StateName, StateData) ->
     {reply, StateName, StateName, StateData};
 handle_sync_event(Event, _From, StateName, StateData) ->
-    error_logger:error_msg("~p:unexpected event \"~p\", state data was ~p", 
-        [?MODULE, Event, StateData]),
+    ErrMsg = "~p:unexpected event \"~p\", state data was ~p",
+    ErrArgs = [?MODULE, Event, StateData],
+    error_logger:error_msg(ErrMsg, ErrArgs),
     {reply, {error, unexpected_message}, StateName, StateData}.
 
 -spec handle_info(term(), atom(), term()) -> {next_state, atom(), term()}
                                              | {stop, atom(), term()}.
 handle_info({'DOWN', _MonitorRef, process, Pid, _Info}, _StateName, {Name, Pid}) ->
+    error_logger:error_msg("received the down message"),
     {next_state, 'DOWN', {Name, undefined}};
 handle_info(Info, StateName, StateData) ->
     error_logger:error_msg("~p:unexpected info \"~p\", state data was ~p", 
