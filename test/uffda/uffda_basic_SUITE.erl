@@ -31,18 +31,13 @@ init_per_testcase(_TestCase, Config) ->
     Config.
 
 end_per_testcase(_TestCase, _Config) ->
-    {ok, Pid} = sr_client:register_me(endcase),
-    Mref = monitor(process, Pid),
-    uffda:stop(),
-    receive
-        {'DOWN', Mref, process, Pid, _Info} -> ok
-    after
-        500 -> exit(kill)
-    end.
+  %  {ok, Pid} = sr_client:register_me(endcase),
+  %  Mref = monitor(process, Pid),
+    uffda:stop().
 
 -spec easy(term()) -> ok.
 easy(_Config) -> 
-    {ok, _Pid} = sr_client:register_me(foo),
+    ok = sr_client:register_me(foo),
     'STARTING_UP' = sr_client:get_state(foo),
     ok = sr_client:go_up(foo),
     'UP' = sr_client:get_state(foo),

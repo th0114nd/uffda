@@ -6,7 +6,7 @@
 
 -spec register_me(service()) -> {ok, pid()} | {error, term()}.
 register_me(Service) ->
-    case service_registry_sup:start_child(service_registry_sup, [Service, self()]) of
+    case service_registry_sup:start_child(Service, self()) of
         {ok, _} -> ok;
         {error, {already_started, ServiceFSM}} -> re_register_me(ServiceFSM, self())
     end.

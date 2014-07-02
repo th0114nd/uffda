@@ -95,7 +95,9 @@ handle_sync_event(Event, _From, StateName, StateData) ->
 
 -spec handle_info(term(), atom(), term()) -> {next_state, atom(), term()}
                                              | {stop, atom(), term()}.
-handle_info({'DOWN', MonRef, process, _Pid, _Info}, _StateName, {#state_data{monitor_ref=MonRef}, #state_data{name=Name}} = _StateData) ->
+handle_info({'DOWN', MonRef, process, Pid, _Info}, 
+            _StateName, 
+            #state_data{monitor_ref=MonRef, pid=Pid, name=Name} = _StateData) ->
     {next_state, 'DOWN', {Name, undefined}};
 handle_info(Info, StateName, StateData) ->
     error_logger:error_msg("~p:unexpected info \"~p\", state data was ~p", 
