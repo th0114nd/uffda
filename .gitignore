@@ -1,6 +1,12 @@
 .eunit
 deps
-*.o
+ebin
+log
+logs
+rel
 *.beam
+*.o
 *.plt
+*.log
 erl_crash.dump
+.erlang.mk.packages.*
