@@ -5,7 +5,14 @@
 
 -spec register_me(service()) -> {ok, pid()} | {error, term()}.
 register_me(Service) ->
-    supervisor:start_child(service_registry_sup, [Service, self()]).
+    case service_registry_sup:start_child(service_registry_sup, [Service, self()]) of
+        {ok, _} -> ok;
+        {error, {already_started, ServiceFSM}} -> re_register_me(ServiceFSM, self())
+    end.
+
+-spec re_register_me(atom(), pid()) -> {ok, pid()}. 
+re_register_me(ServiceFSM, ServicePid) ->
+    gen_fsm:sync_send_all_state_event(ServiceFSM, {re_init, ServicePid}).
 
 -spec get_state(service()) -> atom().
 get_state(Service) ->
