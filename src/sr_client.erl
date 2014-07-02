@@ -4,7 +4,7 @@
 
 -include("uffda.hrl").
 
--spec register_me(service()) -> {ok, pid()} | {error, term()}.
+-spec register_me(service_name()) -> {ok, pid()} | {error, term()}.
 register_me(Service) ->
     case service_registry_sup:start_child(Service, self()) of
         {ok, _} -> ok;
@@ -15,29 +15,29 @@ register_me(Service) ->
 re_register_me(ServiceFSM, ServicePid) ->
     gen_fsm:sync_send_all_state_event(ServiceFSM, {re_init, ServicePid}).
 
--spec get_state(service()) -> atom().
+-spec get_state(service_name()) -> atom().
 get_state(Service) ->
     FSM = service_fsm:fsm_name_from_service(Service),
     gen_fsm:sync_send_all_state_event(FSM, get_state).
 
 -type response() :: ok | {error, term()}.
 
--spec go_up(service()) -> response().
+-spec go_up(service_name()) -> response().
 go_up(Service) ->
     FSM = service_fsm:fsm_name_from_service(Service),
     gen_fsm:send_event(FSM, go_up).
 
--spec go_down(service()) -> response().
+-spec go_down(service_name()) -> response().
 go_down(Service) ->
     FSM = service_fsm:fsm_name_from_service(Service),
     gen_fsm:send_event(FSM, go_down).
 
--spec reset(service()) -> response().
+-spec reset(service_name()) -> response().
 reset(Service) ->
     FSM = service_fsm:fsm_name_from_service(Service),
     gen_fsm:send_event(FSM, reset).
 
--spec wait(service()) -> response().
+-spec wait(service_name()) -> response().
 wait(Service) ->
     FSM = service_fsm:fsm_name_from_service(Service),
     gen_fsm:send_event(FSM, wait).
