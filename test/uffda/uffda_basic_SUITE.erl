@@ -6,7 +6,8 @@
 -export([
         easy/1,
         crash/1,
-        proc/1
+        proc/1,
+        proper_sanity/1
         ]).
 
 -export([
@@ -20,7 +21,8 @@ all() -> [
     easy,
     easy,
     proc,
-    crash
+    crash,
+    proper_sanity
     ].
 
 init_per_suite(Config) -> Config.
@@ -112,3 +114,14 @@ crash(_Config) ->
     Bar ! die,
     erlang:yield(),
     'DOWN' = sr_client:get_state(bar).
+
+proper_sanity(_Config) ->
+    ct:log("A new fsm is always in the down state."),
+    ok = sr_client:register_me('0'),
+    'STARTING_UP' = sr_client:get_state('0'),
+    Test_Down_Init =
+        ?FORALL(Name, atom(), begin
+                                  ok = sr_client:register_me(Name),
+                                  'STARTING_UP' =:= sr_client:get_state(Name)
+                              end),
+    true = proper:quickcheck(Test_Down_Init, ?PQ_NUM(10)).
