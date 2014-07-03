@@ -3,6 +3,7 @@
 -export([
          register_service/1,
          register_service/2,
+         reset_service/1,
          unregister_service/1,
          starting_service/1,
          set_service_online/1,
@@ -14,8 +15,8 @@
 
 
 %% Register reserves a service name for future monitoring.
--spec register_service   (service_name())                -> {ok, service_fsm_pid()}.
--spec register_service   (service_name(), service_pid()) -> {ok, service_fsm_pid()}.
+-spec register_service   (service_name())                -> ok.
+-spec register_service   (service_name(), service_pid()) -> ok.
 -spec unregister_service (Service_Pid)  -> ok | {error, {not_registered, Service_Pid}}
                                                when Service_Pid :: service_pid();
                          (Service_Name) -> ok | {error, {not_registered, Service_Name}}
@@ -23,28 +24,23 @@
 
 register_service(Service_Name)
   when is_atom(Service_Name) ->
-    register(Service_Name, self()).
+    register_service(Service_Name, self()).
 
 register_service(Service_Name, Service_Pid)
   when is_atom(Service_Name), is_pid(Service_Pid) ->
     case uffda_registry_sup:start_child(Service_Name, Service_Pid) of
-        {ok, Service_Fsm} -> {ok, Service_Fsm};
-        {error, {already_started, Service_Fsm}} ->
-            re_register(Service_Fsm, Service_Pid)
+        {ok, _Fsm_Pid} -> ok;
+        {error, {already_started, Fsm_Pid}} ->
+            gen_fsm:sync_send_all_state_event(Fsm_Pid, {re_init, Service_Pid})
     end.
 
-re_register(Service_Fsm, Service_Pid)
-  when is_pid(Service_Fsm), is_pid(Service_Pid) ->
-    ok = gen_fsm:sync_send_all_state_event(Service_Fsm, {re_init, Service_Pid}),
-    {ok, Service_Fsm}.
 
-unregister_service(Service_Pid)
-  when is_pid(Service_Pid) ->
-    uffda_registry_sup:stop_child(Service_Pid);
 unregister_service(Service_Name)
   when is_atom(Service_Name) ->
-    Service_Fsm = service_fsm:fsm_name_from_service(Service_Name),
-    uffda_registry_sup:stop_child(Service_Fsm).
+    Fsm_Name = uffda_service_fsm:fsm_name_from_service(Service_Name),
+    Fsm_Pid = whereis(Fsm_Name),
+    true = unregister(Fsm_Name),
+    ok = uffda_registry_sup:stop_child(Fsm_Pid).
 
 
 %% Service events cause the Service FSM to change the service status.
@@ -56,12 +52,16 @@ unregister_service(Service_Name)
 -spec set_service_offline (service_name()) -> event_response().
 -spec service_status      (service_name()) -> status_response().
     
-starting_service    (Service_Name) -> trigger_event(Service_Name, starting).
-set_service_online  (Service_Name) -> trigger_event(Service_Name, online).
-set_service_offline (Service_Name) -> trigger_event(Service_Name, offline).
-service_status      (Service_Name) -> trigger_event(Service_Name, get_current_status).
+starting_service    (Service_Name) -> trigger_event(Service_Name, starting, async).
+set_service_online  (Service_Name) -> trigger_event(Service_Name, online, async).
+set_service_offline (Service_Name) -> trigger_event(Service_Name, offline, async).
+reset_service       (Service_Name) -> trigger_event(Service_Name, reset, async).
+service_status      (Service_Name) -> trigger_event(Service_Name, get_current_status, sync).
 
-trigger_event(Service_Name, Service_Event)
+trigger_event(Service_Name, Service_Event, Sync_Or_Async)
   when is_atom(Service_Name) ->
-    Service_Fsm = service_fsm:fsm_name_from_service(Service_Name),
-    gen_fsm:send_event(Service_Fsm, Service_Event).
+    Fsm_Name = uffda_service_fsm:fsm_name_from_service(Service_Name),
+    case Sync_Or_Async of
+        sync -> gen_fsm:sync_send_all_state_event(Fsm_Name, Service_Event);
+        async -> gen_fsm:send_event(Fsm_Name, Service_Event)
+    end.

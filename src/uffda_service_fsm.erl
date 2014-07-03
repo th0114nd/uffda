@@ -39,7 +39,7 @@ start_link(Service, ServicePid) ->
 
 %% A Service is starting up
 -spec 'STARTING_UP'(term(), state_data()) -> {next_state, fsm_state_name(), state_data()}.
-'STARTING_UP'(go_up, StateData) -> {next_state, 'UP', StateData};
+'STARTING_UP'(online, StateData) -> {next_state, 'UP', StateData};
 'STARTING_UP'(wait, StateData) -> {next_state, 'DOWN', StateData};
 'STARTING_UP'(Event, StateData) ->
     Err_Msg = "~p: unexpected event \"~p\", state was ~p",
@@ -49,7 +49,7 @@ start_link(Service, ServicePid) ->
 
 %% A Service is up and running
 -spec 'UP'(term(), state_data()) -> {next_state, fsm_state_name(), state_data()}.
-'UP'(go_down, StateData) -> {next_state, 'DOWN', StateData};
+'UP'(offline, StateData) -> {next_state, 'DOWN', StateData};
 'UP'(Event, StateData) ->
     Err_Msg = "~p: unexpected event \"~p\", state was \"~p\" state data was \"~p\"",
     Err_Args = [?MODULE, Event, 'UP', StateData],
@@ -93,7 +93,7 @@ handle_sync_event({re_init, ServicePid},
                   _From, _StateName, 
                   #state_data{name=Name} = StateData) ->
     {reply, ok, 'STARTING_UP', reinitialize(Name, ServicePid, StateData)};
-handle_sync_event(get_state, _From, StateName, StateData) ->
+handle_sync_event(get_current_status, _From, StateName, StateData) ->
     {reply, StateName, StateName, StateData};
 handle_sync_event(Event, _From, StateName, StateData) ->
     Err_Msg = "~p:unexpected event \"~p\", state data was ~p",
