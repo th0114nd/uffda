@@ -20,7 +20,7 @@ stop() -> application:stop(?MODULE).
 %%-------------------------------------------------------------------
 %% @private
 -spec start(any(), any()) -> {ok, pid()}.
-start(_StartType, _StartArgs) -> service_registry_sup:start_link().
+start(_StartType, _StartArgs) -> uffda_registry_sup:start_link().
 
 %% @private
 -spec stop(any()) -> no_return().

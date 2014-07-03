@@ -1,4 +1,4 @@
--module(service_fsm).
+-module(uffda_service_fsm).
 -behavior(gen_fsm).
 
 -export([init/1, handle_event/3, handle_sync_event/4,

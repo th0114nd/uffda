@@ -1,9 +1,9 @@
 {application, uffda,
  [
-  {description, "Uffda Service registry"},
+  {description, "Uffda Service Registry"},
   {vsn, "0.1.0"},
   {id, "uffda"},
-  {registered, []},
+  {registered, [uffda_registry_sup]},
   {applications, [kernel, stdlib]},
   {included_applications, []},
   {mod, {uffda, []}},
