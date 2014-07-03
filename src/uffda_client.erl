@@ -8,11 +8,17 @@
          starting_service/1,
          set_service_online/1,
          set_service_offline/1,
-         service_status/1
+         service_status/1,
+         which_services/0
         ]).
 
 -include("uffda.hrl").
 
+-type service_descriptions() :: term().
+
+-spec which_services() -> [service_descriptions()].
+which_services() ->
+    FSM_Pids = uffda_registry_sup:which_children().
 
 %% Register reserves a service name for future monitoring.
 -spec register_service   (service_name())                -> ok.
@@ -47,6 +53,7 @@ unregister_service(Service_Name)
 -type event_response()  :: {error, {not_registered, service_name()}} | ok.
 -type status_response() :: {error, {not_registered, service_name()}} | service_status().
 
+-spec reset_service       (service_name()) -> event_response().
 -spec starting_service    (service_name()) -> event_response().
 -spec set_service_online  (service_name()) -> event_response().
 -spec set_service_offline (service_name()) -> event_response().

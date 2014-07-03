@@ -7,7 +7,8 @@
         easy/1,
         crash/1,
         proc/1,
-        proper_sanity/1
+        proper_sanity/1,
+        group_query_checks/1
         ]).
 
 -export([
@@ -22,7 +23,8 @@ all() -> [
     easy,
     proc,
     crash,
-    proper_sanity
+    proper_sanity,
+    group_query_checks
     ].
 
 init_per_suite(Config) -> Config.
@@ -44,7 +46,6 @@ easy(_Config) ->
     'UP' = uffda_client:service_status(foo),
     ok = uffda_client:set_service_offline(foo),
     'DOWN' = uffda_client:service_status(foo),
-    ok = uffda_client:set_service_online(foo),
     ct:comment("Tested ~p internal states", [['STARTING_UP', 'UP', 'DOWN', 'STARTING_UP']]),
     ok.
 
@@ -127,3 +128,14 @@ proper_sanity(_Config) ->
                               end),
     true = proper:quickcheck(Test_Down_Init, ?PQ_NUM(10)),
     ok.
+
+group_query_checks(_Config) ->
+    ct:log("Checking that queries run properly."),
+    [] = uffda_client:which_services(),
+    ok = uffda_client:register_service(baz),
+    [Content] = uffda_client:which_services(),
+    ok = uffda_client:register_service(boop),
+    [_, _] = uffda_client:which_services(),
+    true = lists:member(Content, uffda_client:which_services()),
+    ok = uffda_client:unregister_service(boop),
+    [Content] = uffda_client:which_services().
