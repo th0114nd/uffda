@@ -1,15 +1,12 @@
--module(service_registry_sup).
+-module(uffda_registry_sup).
 -behavior(supervisor).
 
 -export([start_link/0, init/1, start_child/2]).
 
--define(CHILD(__Name, __Mod, __Args), {__Name, 
-                                       {__Mod, start_link, __Args},
-                                       permanent, 
-                                       2000, 
-                                       worker,
-                                       [__Mod]}).
 -define(SERVER, ?MODULE).
+-define(CHILD(__Mod, __Args), {__Mod, {__Mod, start_link, __Args},
+                               permanent, 2000, worker, [__Mod]}).
+
 %%-------------------------------------------------------------------
 %% PUBLIC API
 %%-------------------------------------------------------------------
@@ -20,8 +17,8 @@
 start_link() ->
     supervisor:start_link({local, ?SERVER}, ?MODULE, {}).
 
-start_child(Service, ServPid) ->
-    supervisor:start_child(?MODULE, [Service, ServPid]).
+start_child(Service, Service_Pid) ->
+    supervisor:start_child(?MODULE, [Service, Service_Pid]).
 
 %%----------------------------------------------------------------------
 %% Supervisor behaviour callbacks
@@ -30,5 +27,5 @@ start_child(Service, ServPid) ->
 -spec init({}) -> {ok, {{supervisor:strategy(), non_neg_integer(), non_neg_integer()},
                         [supervisor:child_spec()]}}.
 init({}) -> 
-    FSM_Spec = ?CHILD(service_fsm, service_fsm, []),
-    {ok, {{simple_one_for_one, 5, 60}, [FSM_Spec]}}.
+    Fsm_Spec = ?CHILD(uffda_service_fsm, []),
+    {ok, {{simple_one_for_one, 5, 60}, [Fsm_Spec]}}.
