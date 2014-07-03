@@ -1,7 +1,11 @@
 -module(uffda_registry_sup).
 -behavior(supervisor).
 
--export([start_link/0, init/1, start_child/2, stop_child/1]).
+-export([start_link/0,
+         init/1,
+         start_child/2,
+         stop_child/1,
+         which_children/0]).
 
 -define(SERVER, ?MODULE).
 -define(CHILD(__Mod, __Args), {__Mod, {__Mod, start_link, __Args},
@@ -26,7 +30,11 @@ start_child(Service, Service_Pid)
 stop_child(Pid)
   when is_pid(Pid) ->
     supervisor:terminate_child(?SERVER, Pid).
-    
+
+-spec which_children() -> [service_fsm_pid()].
+which_children() ->
+    Extract_Pid = fun ({undefined, Pid, worker, _Mod}) -> Pid end,
+    lists:map(Extract_Pid, supervisor:which_children(?SERVER)).
 %%----------------------------------------------------------------------
 %% Supervisor behaviour callbacks
 %%----------------------------------------------------------------------
