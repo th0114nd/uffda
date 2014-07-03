@@ -22,7 +22,7 @@ start_child(Service, Service_Pid)
   when is_atom(Service), is_pid(Service_Pid) ->
     supervisor:start_child(?MODULE, [Service, Service_Pid]).
 
--spec stop_child(service_fsm_pid()) -> ok | {error, term()}.
+-spec stop_child(service_name()) -> ok | {error, term()}.
 stop_child(Pid)
   when is_pid(Pid) ->
     supervisor:terminate_child(?SERVER, Pid).
