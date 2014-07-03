@@ -36,7 +36,8 @@ end_per_testcase(_TestCase, _Config) ->
     uffda:stop().
 
 -spec easy(term()) -> ok.
-easy(_Config) -> 
+easy(_Config) ->
+    ct:log("Test basic supervisor / fsm startup and state change capability"),
     ok = sr_client:register_me(foo),
     'STARTING_UP' = sr_client:get_state(foo),
     ok = sr_client:go_up(foo),
@@ -45,6 +46,7 @@ easy(_Config) ->
     'DOWN' = sr_client:get_state(foo),
     ok = sr_client:reset(foo),
     'STARTING_UP' = sr_client:get_state(foo),
+    ct:comment("Tested ~p internal states", [['STARTING_UP', 'UP', 'DOWN', 'STARTING_UP']]),
     ok.
 
 -spec create_service(atom()) -> pid().
@@ -73,11 +75,12 @@ expect_msg(Msg) ->
         Msg -> ok;
         Other -> Other
     after
-        500 -> notok
+        50 -> notok
     end.
 
 -spec proc(term()) -> ok.
 proc(_Config) ->
+    ct:log("Test messaging to the service_registry"),
     Foo = create_service(foo),
     ok = expect_msg({ok, foo}),
     Foo ! {state, self()},
@@ -91,10 +94,13 @@ proc(_Config) ->
     Foo ! reset,
     Foo ! {state, self()},
     ok = expect_msg('STARTING_UP'),
-    'STARTING_UP' = sr_client:get_state(foo).
+    'STARTING_UP' = sr_client:get_state(foo),
+    ct:comment("Tested FSM reaction to an normally function service"),
+    ok.
      
 -spec crash(term()) -> ok.
 crash(_Config) ->
+    ct:log("Test messaging to the service_registry when service crashes"),
     Foo = create_service(foo),
     ok = expect_msg({ok, foo}),
     Foo ! {state, self()},
@@ -111,4 +117,6 @@ crash(_Config) ->
     'UP' = sr_client:get_state(bar),
     Bar ! die,
     erlang:yield(),
-    'DOWN' = sr_client:get_state(bar).
+    'DOWN' = sr_client:get_state(bar),
+    ct:comment("Tested FSM reaction to a crashing function service"),
+    ok.
