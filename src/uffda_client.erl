@@ -18,7 +18,7 @@
 
 -spec which_services() -> [service_descriptions()].
 which_services() ->
-    FSM_Pids = uffda_registry_sup:which_children().
+    _FSM_Pids = uffda_registry_sup:which_children().
 
 %% Register reserves a service name for future monitoring.
 -spec register_service   (service_name())                -> ok.
@@ -40,13 +40,11 @@ register_service(Service_Name, Service_Pid)
             gen_fsm:sync_send_all_state_event(Fsm_Pid, {re_init, Service_Pid})
     end.
 
-
 unregister_service(Service_Name)
   when is_atom(Service_Name) ->
     Fsm_Name = uffda_service_fsm:fsm_name_from_service(Service_Name),
     Fsm_Pid = whereis(Fsm_Name),
-    true = unregister(Fsm_Name),
-    ok = uffda_registry_sup:stop_child(Fsm_Pid).
+    uffda_registry_sup:stop_child(Fsm_Pid).
 
 
 %% Service events cause the Service FSM to change the service status.
@@ -59,16 +57,16 @@ unregister_service(Service_Name)
 -spec set_service_offline (service_name()) -> event_response().
 -spec service_status      (service_name()) -> status_response().
     
-starting_service    (Service_Name) -> trigger_event(Service_Name, starting, async).
-set_service_online  (Service_Name) -> trigger_event(Service_Name, online, async).
-set_service_offline (Service_Name) -> trigger_event(Service_Name, offline, async).
-reset_service       (Service_Name) -> trigger_event(Service_Name, reset, async).
-service_status      (Service_Name) -> trigger_event(Service_Name, get_current_status, sync).
+starting_service    (Service_Name) -> trigger_event(Service_Name, starting,       async).
+set_service_online  (Service_Name) -> trigger_event(Service_Name, online,         async).
+set_service_offline (Service_Name) -> trigger_event(Service_Name, offline,        async).
+reset_service       (Service_Name) -> trigger_event(Service_Name, reset,          async).
+service_status      (Service_Name) -> trigger_event(Service_Name, current_status, sync).
 
 trigger_event(Service_Name, Service_Event, Sync_Or_Async)
   when is_atom(Service_Name) ->
     Fsm_Name = uffda_service_fsm:fsm_name_from_service(Service_Name),
     case Sync_Or_Async of
-        sync -> gen_fsm:sync_send_all_state_event(Fsm_Name, Service_Event);
+        sync  -> gen_fsm:sync_send_all_state_event(Fsm_Name, Service_Event);
         async -> gen_fsm:send_event(Fsm_Name, Service_Event)
     end.
