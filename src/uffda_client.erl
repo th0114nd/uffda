@@ -57,11 +57,11 @@ unregister_service(Service_Name)
 -spec set_service_offline (service_name()) -> event_response().
 -spec service_status      (service_name()) -> status_response().
     
-starting_service    (Service_Name) -> trigger_event(Service_Name, starting,           async).
-set_service_online  (Service_Name) -> trigger_event(Service_Name, online,             async).
-set_service_offline (Service_Name) -> trigger_event(Service_Name, offline,            async).
-reset_service       (Service_Name) -> trigger_event(Service_Name, reset,              async).
-service_status      (Service_Name) -> trigger_event(Service_Name, get_current_status, sync).
+starting_service    (Service_Name) -> trigger_event(Service_Name, starting,       async).
+set_service_online  (Service_Name) -> trigger_event(Service_Name, online,         async).
+set_service_offline (Service_Name) -> trigger_event(Service_Name, offline,        async).
+reset_service       (Service_Name) -> trigger_event(Service_Name, reset,          async).
+service_status      (Service_Name) -> trigger_event(Service_Name, current_status, sync).
 
 trigger_event(Service_Name, Service_Event, Sync_Or_Async)
   when is_atom(Service_Name) ->

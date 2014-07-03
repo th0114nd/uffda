@@ -90,7 +90,7 @@ handle_event(Event, State_Name, State_Data) ->
     log_unexpected_msg(handle_event, event, Event, State_Data),
     {next_state, State_Name, State_Data}.
 
--type sync_event() :: {re_init, service_pid()} | get_current_status.
+-type sync_event() :: {re_init, service_pid()} | current_status.
 -spec handle_sync_event(sync_event(), {reference(), pid()}, State_Name, State_Data)
                        -> {next_state, State_Name, State_Data}
                               when State_Name :: fsm_state_name(),
@@ -98,7 +98,7 @@ handle_event(Event, State_Name, State_Data) ->
 handle_sync_event({re_init, Service_Pid}, _From, _State_Name, 
                   #state_data{name=Name} = State_Data) ->
     {reply, ok, ?STATE_STARTING_UP, reinitialize(Name, Service_Pid, State_Data)};
-handle_sync_event(get_current_status, _From, State_Name, State_Data) ->
+handle_sync_event(current_status, _From, State_Name, State_Data) ->
     {reply, status(State_Name), State_Name, State_Data};
 handle_sync_event(Event, _From, State_Name, State_Data) ->
     log_unexpected_msg(handle_sync_event, event, Event, State_Data),

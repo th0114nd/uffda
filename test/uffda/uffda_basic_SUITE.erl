@@ -41,7 +41,7 @@ end_per_testcase(_TestCase, _Config) ->
 easy(_Config) ->
     ct:log("Test basic supervisor / fsm startup and state change capability"),
     ok = uffda_client:register_service(foo),
-    starting_up =  uffda_client:service_status(foo),
+    starting_up = uffda_client:service_status(foo),
     ok = uffda_client:set_service_online(foo),
     up = uffda_client:service_status(foo),
     ok = uffda_client:set_service_offline(foo),
