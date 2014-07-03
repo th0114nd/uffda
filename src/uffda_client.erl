@@ -38,8 +38,6 @@ register_service(Service_Name, Service_Pid)
 unregister_service(Service_Name)
   when is_atom(Service_Name) ->
     Fsm_Name = uffda_service_fsm:fsm_name_from_service(Service_Name),
-    Fsm_Pid = whereis(Fsm_Name),
-    true = unregister(Fsm_Name),
     ok = uffda_registry_sup:stop_child(Fsm_Pid).
 
 
