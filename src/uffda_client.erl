@@ -18,7 +18,7 @@
 
 -spec which_services() -> [service_descriptions()].
 which_services() ->
-    FSM_Pids = uffda_registry_sup:which_children().
+    _FSM_Pids = uffda_registry_sup:which_children().
 
 %% Register reserves a service name for future monitoring.
 -spec register_service   (service_name())                -> ok.
@@ -43,7 +43,8 @@ register_service(Service_Name, Service_Pid)
 unregister_service(Service_Name)
   when is_atom(Service_Name) ->
     Fsm_Name = uffda_service_fsm:fsm_name_from_service(Service_Name),
-    uffda_registry_sup:stop_child(Fsm_Name).
+    Fsm_Pid = whereis(Fsm_Name),
+    uffda_registry_sup:stop_child(Fsm_Pid).
 
 
 %% Service events cause the Service FSM to change the service status.
