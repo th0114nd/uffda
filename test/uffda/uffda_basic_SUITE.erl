@@ -119,7 +119,7 @@ crash(_Config) ->
     'UP' = sr_client:get_state(bar),
     Bar ! die,
     erlang:yield(),
-    'DOWN' = sr_client:get_state(bar).
+    'DOWN' = sr_client:get_state(bar),
     ct:comment("Tested FSM reaction to a crashing function service"),
     ok.
 
