@@ -91,7 +91,7 @@ proc(_Config) ->
     Foo ! down,
     Foo ! {state, self()},
     ok = expect_msg('DOWN'),
-    ct:comment("Tested FSM reaction to an normally function service"),
+    ct:comment("Tested FSM reaction to a normally function service"),
     ok.
      
 -spec crash(term()) -> ok.
@@ -118,7 +118,7 @@ crash(_Config) ->
     ok.
 
 proper_sanity(_Config) ->
-    ct:log("A new fsm is always in the down state."),
+    ct:log("A new fsm is always in the 'STARTING_UP' state."),
     ok = uffda_client:register_service('0'),
     'STARTING_UP' = uffda_client:service_status('0'),
     Test_Down_Init =
@@ -127,6 +127,25 @@ proper_sanity(_Config) ->
                                   'STARTING_UP' =:= uffda_client:service_status(Name)
                               end),
     true = proper:quickcheck(Test_Down_Init, ?PQ_NUM(10)),
+    ok.
+
+-type transition() :: set_service_online | set_service_offline.
+proper_state_sequence(_Config) ->
+    ct:log("Testing states do not get confuddled given a random transition sequence."),
+    ok = uffda_client:register_service('foo'),
+    'STARTING_UP' = uffda_client:service_status('foo'),
+    ok = uffda_client:set_service_online('foo'),
+    'UP' = uffda_client:service_status('foo'),
+    Up_Down_Seq =
+        ?FORALL([T1, T2], [transition(), transition()], begin
+           ok = erlang:apply(uffda_client, T1, 'foo'),
+           ok = erlang:apply(uffda_client, T2, 'foo'),
+           case T2 of
+               set_service_online -> 'UP' =:= uffda_client:service_status('foo');
+               set_service_offline -> 'DOWN' =:= uffda_client:service_status('foo')
+           end
+        end),
+    true = proper:quickcheck(Up_Down_Seq, ?PQ_NUM(10)),
     ok.
 
 group_query_checks(_Config) ->
