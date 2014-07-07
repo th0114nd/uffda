@@ -136,28 +136,20 @@ proper_sanity(_Config) ->
 -type transition() :: set_service_online | set_service_offline.
 proper_state_sequence(_Config) ->
     ct:log("Testing states do not get confuddled given a random transition sequence."),
-    ok = uffda_client:register_service('foo'),
-    'STARTING_UP' = uffda_client:service_status('foo'),
-    ok = uffda_client:set_service_online('foo'),
-    'UP' = uffda_client:service_status('foo'),
+    uffda_client:register_service('foo'),
+    uffda_client:starting_service('foo'),
+    uffda_client:set_service_online('foo'), 
     Up_Down_Seq =
         ?FORALL([T1, T2], [transition(), transition()], begin
            ok = erlang:apply(uffda_client, T1, ['foo']),
            ok = erlang:apply(uffda_client, T2, ['foo']),
+           ct:log("~p", [uffda_client:service_status('foo')]),
            case T2 of
-               set_service_online -> 'UP' =:= uffda_client:service_status('foo');
-               set_service_offline -> 'DOWN' =:= uffda_client:service_status('foo')
+               set_service_online -> up =:= uffda_client:service_status('foo');
+               set_service_offline -> down =:= uffda_client:service_status('foo')
            end
         end),
     true = proper:quickcheck(Up_Down_Seq, ?PQ_NUM(10)),
-    ok.
-
-startup_time(_Config) ->
-    ct:log("Checking that the STARTING_UP state will transition to DOWN after being idle for too long."),
-    ok = uffda_client:register_service('foo'),
-    'STARTING_UP' = uffda_client:service_status('foo'),
-    timer:sleep(5000),
-    'DOWN' = uffda_client:service_status('foo'),
     ok.
 
 group_query_checks(_Config) ->
