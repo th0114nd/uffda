@@ -160,15 +160,25 @@ handle_event(Event, State_Name, State_Data) ->
                               when State_Name :: fsm_state_name(),
                                    State_Data :: state_data().
 
-handle_sync_event({re_init, Service_Pid}, _From, State_Name, 
-                  #state_data{name=Name} = State_Data) ->
+%% Re-init with the same process that is already being monitored...
+handle_sync_event({re_init, Service_Pid}, _From, ?STATE_REGISTERED, #state_data{pid=Service_Pid} = State_Data) ->
+    {reply, ok, ?STATE_STARTING_UP, State_Data, ?MAX_START_UP_TIME};
+handle_sync_event({re_init, Service_Pid}, _From, _Other_State_Name, #state_data{pid=Service_Pid} = State_Data) ->
+    {reply, ok, ?STATE_RESTARTING,  State_Data, ?MAX_START_UP_TIME};
+%% Re-init with a new process to monitor...
+handle_sync_event({re_init, Service_Pid}, _From,  State_Name,       #state_data{name=Name}       = State_Data) ->
+    New_State_Data = reinitialize(Name, Service_Pid, State_Data),
     New_State = case State_Name of
                     ?STATE_REGISTERED -> ?STATE_STARTING_UP;
                     _Any_Other        -> ?STATE_RESTARTING
                 end,
-    {reply, ok, New_State, reinitialize(Name, Service_Pid, State_Data)};
+    {reply, ok, New_State, New_State_Data, ?MAX_START_UP_TIME};
+
+%% Request to get the current status...
 handle_sync_event(current_status, _From, State_Name, State_Data) ->
     {reply, status(State_Name), State_Name, State_Data};
+
+%% Some unknown request.
 handle_sync_event(Event, _From, State_Name, State_Data) ->
     log_unexpected_msg(handle_sync_event, event, Event, State_Data),
     {reply, {error, unexpected_message}, State_Name, State_Data}.
@@ -176,12 +186,18 @@ handle_sync_event(Event, _From, State_Name, State_Data) ->
 -type info_msg() :: {'DOWN', reference(), process, service_pid(), Reason::any()}.
 -spec handle_info(info_msg(), fsm_state_name(), term())
                  -> {next_state, ?STATE_DOWN, state_data()}.
+
+%% Service went down normally...
 handle_info({'DOWN', Mon_Ref, process, Pid, normal}, _State_Name, 
             #state_data{monitor_ref=Mon_Ref, pid=Pid} = State_Data) ->
     {next_state, ?STATE_DOWN,    State_Data#state_data{monitor_ref=undefined, pid=undefined}};
+
+%% Service went down with a reason other than 'normal'...
 handle_info({'DOWN', Mon_Ref, process, Pid, _Reason}, _State_Name, 
             #state_data{monitor_ref=Mon_Ref, pid=Pid} = State_Data) ->
     {next_state, ?STATE_CRASHED, State_Data#state_data{monitor_ref=undefined, pid=undefined}};
+
+%% Some unknown request.
 handle_info(Info, State_Name, State_Data) ->
     log_unexpected_msg(handle_info, info, Info, State_Data),
     {next_state, State_Name, State_Data}.
