@@ -8,6 +8,7 @@
         crash/1,
         name_checks/1,
         proc/1,
+        proper_name_checks/1,
         proper_sanity/1,
         group_query_checks/1
         ]).
@@ -26,7 +27,8 @@ all() -> [
     crash,
     name_checks,
     proper_sanity,
-    group_query_checks
+    group_query_checks,
+    proper_name_checks
     ].
 
 init_per_suite(Config) -> Config.
@@ -154,12 +156,39 @@ name_checks(_Config) ->
     ok = uffda_client:unregister_service(boop),
     [] = uffda_client:which_service_names().
 
-name_check_loop(_Expected, 0) -> ok;
-name_check_loop(Expected, N) when N > 0 ->
-   true = Expected == uffda_client:which_service_names(),
-   name_check_loop(Expected, N - 1).
+check([], _Reg, _UnReg) -> true;
+check([H|T], Reg, UnReg) ->
+    case random:uniform(1) of
+        1 -> ok = uffda_client:register_service(H),
+             NewReg = sets:add_element(H, Reg),
+             true = sets:is_element(H, NewReg),
+             true = sets:is_subset(Reg, NewReg),
+             true = NewReg == sets:from_list(uffda_client:which_service_names());
+        _ -> NewReg = ok,
+             ct:log("uhhhhhhhh~n")
+    end,
+    check(T, NewReg, UnReg).
+    
+%name_check_loop(_Expected, 0) -> ok;
+%name_check_loop(Expected, N) when N > 0 ->
+%   true = Expected == uffda_client:which_service_names(),
+%   name_check_loop(Expected, N - 1).
 
 proper_name_checks(_Config) ->
     ct:log("Registered services are the expected ones."),
-%    NCs = ?FORALL(NameList, [atom()], 
-    name_check_loop(sets:new(), 3).
+    check([''], sets:new(), []),
+    check(['', ''], sets:new(), []),
+    check(['', '', '', '', '', '', '', '', '', '', '', '', ''], sets:new(), []),
+    uffda_client:unregister_service(''),
+    check(['hello', 'world', 'please'], sets:new(), []),
+    [ok = uffda_client:unregister_service(Name) || Name <- ['hello', 'world', 'please']],
+%    Balanced = fun(Listy) -> ct:log("Len: ~p~n", [length(Listy)]), true end,
+    NCs = ?FORALL(NameList, list(atom()), 
+            ?IMPLIES((20 < length(NameList)) and (length(NameList) < 1000), 
+                      begin
+                          UniqueNameList = sets:to_list(sets:from_list(NameList)),
+                          true = check(UniqueNameList, sets:new(), []),
+                          [ok = uffda_client:unregister_service(Name) || Name <- UniqueNameList],
+                          true
+                      end)),
+    true = proper:quickcheck(NCs, ?PQ_NUM(10)).
