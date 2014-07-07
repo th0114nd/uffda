@@ -150,6 +150,14 @@ proper_state_sequence(_Config) ->
     true = proper:quickcheck(Up_Down_Seq, ?PQ_NUM(10)),
     ok.
 
+startup_time(_Config) ->
+    ct:log("Checking that the STARTING_UP state will transition to DOWN after being idle for too long."),
+    ok = uffda_client:register_service('foo'),
+    'STARTING_UP' = uffda_client:service_status('foo'),
+    timer:sleep(5000),
+    'DOWN' = uffda_client:service_status('foo'),
+    ok.
+
 group_query_checks(_Config) ->
     ct:log("Checking that queries run properly."),
     [] = uffda_client:which_services(),
