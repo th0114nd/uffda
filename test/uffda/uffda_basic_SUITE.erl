@@ -6,6 +6,7 @@
 -export([
         easy/1,
         crash/1,
+        name_checks/1,
         proc/1,
         proper_sanity/1,
         group_query_checks/1
@@ -23,6 +24,7 @@ all() -> [
     easy,
     proc,
     crash,
+    name_checks,
     proper_sanity,
     group_query_checks
     ].
@@ -118,7 +120,7 @@ crash(_Config) ->
     ok.
 
 proper_sanity(_Config) ->
-    ct:log("A new fsm is always in the down state."),
+    ct:log("A new fsm always has starting_up status."),
     ok = uffda_client:register_service('0'),
     starting_up = uffda_client:service_status('0'),
     Test_Down_Init =
@@ -131,11 +133,33 @@ proper_sanity(_Config) ->
 
 group_query_checks(_Config) ->
     ct:log("Checking that queries run properly."),
-    [] = uffda_client:which_services(),
+    [] = uffda_client:which_service_pids(),
     ok = uffda_client:register_service(baz),
-    [Content] = uffda_client:which_services(),
+    [Content] = uffda_client:which_service_pids(),
     ok = uffda_client:register_service(boop),
-    [_, _] = uffda_client:which_services(),
-    true = lists:member(Content, uffda_client:which_services()),
+    [_, _] = uffda_client:which_service_pids(),
+    true = lists:member(Content, uffda_client:which_service_pids()),
     ok = uffda_client:unregister_service(boop),
-    [Content] = uffda_client:which_services().
+    [Content] = uffda_client:which_service_pids().
+
+name_checks(_Config) ->
+    ct:log("Names expected are names returned."),
+    [] = uffda_client:which_service_names(),
+    ok = uffda_client:register_service(baz),
+    [baz] = uffda_client:which_service_names(),
+    ok = uffda_client:register_service(boop),
+    true = sets:from_list([baz, boop]) == sets:from_list(uffda_client:which_service_names()),
+    ok = uffda_client:unregister_service(baz),
+    true = sets:from_list([boop]) == sets:from_list(uffda_client:which_service_names()),
+    ok = uffda_client:unregister_service(boop),
+    [] = uffda_client:which_service_names().
+
+name_check_loop(_Expected, 0) -> ok;
+name_check_loop(Expected, N) when N > 0 ->
+   true = Expected == uffda_client:which_service_names(),
+   name_check_loop(Expected, N - 1).
+
+proper_name_checks(_Config) ->
+    ct:log("Registered services are the expected ones."),
+%    NCs = ?FORALL(NameList, [atom()], 
+    name_check_loop(sets:new(), 3).

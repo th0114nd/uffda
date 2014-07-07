@@ -100,6 +100,8 @@ handle_sync_event({re_init, Service_Pid}, _From, _State_Name,
     {reply, ok, ?STATE_STARTING_UP, reinitialize(Name, Service_Pid, State_Data)};
 handle_sync_event(current_status, _From, State_Name, State_Data) ->
     {reply, status(State_Name), State_Name, State_Data};
+handle_sync_event(get_service_name, _From, State_Name, #state_data{name=Name} = State_Data) ->
+    {reply, Name, State_Name, State_Data};
 handle_sync_event(Event, _From, State_Name, State_Data) ->
     log_unexpected_msg(handle_sync_event, event, Event, State_Data),
     {reply, {error, unexpected_message}, State_Name, State_Data}.
