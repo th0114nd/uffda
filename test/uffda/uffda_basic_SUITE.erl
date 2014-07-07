@@ -43,7 +43,7 @@ end_per_testcase(_TestCase, _Config) ->
 easy(_Config) ->
     ct:log("Test basic supervisor / fsm startup and state change capability"),
     ok = uffda_client:register_service(foo),
-    starting_up = uffda_client:service_status(foo),
+    registered = uffda_client:service_status(foo),
     ok = uffda_client:set_service_online(foo),
     up = uffda_client:service_status(foo),
     ok = uffda_client:set_service_offline(foo),
@@ -63,10 +63,10 @@ startup(Name, Caller) ->
 -spec service_loop(atom()) -> term().
 service_loop(Name) ->
     receive
-        die -> exit(kill);
-        up -> uffda_client:set_service_online(Name);
+        die   -> exit(kill);
+        up    -> uffda_client:set_service_online(Name);
+        down  -> uffda_client:set_service_offline(Name);
         reset -> uffda_client:reset_service(Name);
-        down -> uffda_client:set_service_offline(Name);
         {state, Pid} -> Pid ! uffda_client:service_status(Name)
     end,
     service_loop(Name).
@@ -86,7 +86,7 @@ proc(_Config) ->
     Foo = create_service(foo),
     ok = expect_msg({ok, foo}),
     Foo ! {state, self()},
-    ok = expect_msg(starting_up),
+    ok = expect_msg(registered),
     Foo ! up,
     Foo ! {state, self()},
     ok = expect_msg(up),
@@ -102,11 +102,12 @@ crash(_Config) ->
     Foo = create_service(foo),
     ok = expect_msg({ok, foo}),
     Foo ! {state, self()},
-    ok = expect_msg(starting_up),
-    starting_up = uffda_client:service_status(foo),
+    ok = expect_msg(registered),
+    registered = uffda_client:service_status(foo),
     Foo ! die,
-    true = is_process_alive(Foo),
-    starting_up = uffda_client:service_status(foo),
+    erlang:yield(),
+    false = is_process_alive(Foo),
+    crashed = uffda_client:service_status(foo),
     Bar = create_service(bar),
     ok = expect_msg({ok, bar}),
     Bar ! up,
@@ -115,19 +116,20 @@ crash(_Config) ->
     up = uffda_client:service_status(bar),
     Bar ! die,
     erlang:yield(),
-    down = uffda_client:service_status(bar),
+    crashed = uffda_client:service_status(bar),
     ct:comment("Tested FSM reaction to a crashing function service"),
     ok.
 
 proper_sanity(_Config) ->
     ct:log("A new fsm is always in the 'STARTING_UP' state."),
     ok = uffda_client:register_service('0'),
-    starting_up = uffda_client:service_status('0'),
+    registered = uffda_client:service_status('0'),
     Test_Down_Init =
-        ?FORALL(Name, atom(), begin
-                                  ok = uffda_client:register_service(Name),
-                                  starting_up =:= uffda_client:service_status(Name)
-                              end),
+        ?FORALL(Name, ?SUCHTHAT(Name, atom(), Name =/= ''),
+                begin
+                    ok = uffda_client:register_service(Name),
+                    registered =:= uffda_client:service_status(Name)
+                end),
     true = proper:quickcheck(Test_Down_Init, ?PQ_NUM(10)),
     ok.
 
