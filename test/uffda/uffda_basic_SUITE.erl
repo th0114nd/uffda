@@ -8,7 +8,8 @@
         crash/1,
         proc/1,
         proper_sanity/1,
-        group_query_checks/1
+        group_query_checks/1,
+        proper_state_sequence/1
         ]).
 
 -export([
@@ -24,7 +25,8 @@ all() -> [
     proc,
     crash,
     proper_sanity,
-    group_query_checks
+    group_query_checks,
+    proper_state_sequence
     ].
 
 init_per_suite(Config) -> Config.
@@ -138,8 +140,8 @@ proper_state_sequence(_Config) ->
     'UP' = uffda_client:service_status('foo'),
     Up_Down_Seq =
         ?FORALL([T1, T2], [transition(), transition()], begin
-           ok = erlang:apply(uffda_client, T1, 'foo'),
-           ok = erlang:apply(uffda_client, T2, 'foo'),
+           ok = erlang:apply(uffda_client, T1, ['foo']),
+           ok = erlang:apply(uffda_client, T2, ['foo']),
            case T2 of
                set_service_online -> 'UP' =:= uffda_client:service_status('foo');
                set_service_offline -> 'DOWN' =:= uffda_client:service_status('foo')
