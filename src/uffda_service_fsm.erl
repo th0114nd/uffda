@@ -155,8 +155,8 @@ handle_event(Event, State_Name, State_Data) ->
     {next_state, State_Name, State_Data}.
 
 -type sync_event() :: {re_init, service_pid()} | current_status.
--spec handle_sync_event(sync_event(), {reference(), pid()}, State_Name, State_Data)
-                       -> {next_state, State_Name, State_Data}
+-spec handle_sync_event(sync_event(), {pid(), Tag :: term()}, State_Name, State_Data)
+                       -> {reply, ok | service_status, State_Name, State_Data}
                               when State_Name :: fsm_state_name(),
                                    State_Data :: state_data().
 
