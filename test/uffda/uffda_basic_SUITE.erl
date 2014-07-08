@@ -62,11 +62,11 @@ startup(Name, Caller) ->
 
 -spec service_loop(atom()) -> term().
 service_loop(Name) ->
+    uffda_client:starting_service(Name, self()),
     receive
         die   -> exit(kill);
         up    -> uffda_client:set_service_online(Name);
         down  -> uffda_client:set_service_offline(Name);
-        reset -> uffda_client:reset_service(Name);
         {state, Pid} -> Pid ! uffda_client:service_status(Name)
     end,
     service_loop(Name).
@@ -86,7 +86,7 @@ proc(_Config) ->
     Foo = create_service(foo),
     ok = expect_msg({ok, foo}),
     Foo ! {state, self()},
-    ok = expect_msg(registered),
+    ok = expect_msg(starting_up),
     Foo ! up,
     Foo ! {state, self()},
     ok = expect_msg(up),
@@ -102,8 +102,8 @@ crash(_Config) ->
     Foo = create_service(foo),
     ok = expect_msg({ok, foo}),
     Foo ! {state, self()},
-    ok = expect_msg(registered),
-    registered = uffda_client:service_status(foo),
+    ok = expect_msg(starting_up),
+    starting_up = uffda_client:service_status(foo),
     Foo ! die,
     erlang:yield(),
     false = is_process_alive(Foo),
@@ -137,16 +137,16 @@ proper_sanity(_Config) ->
 proper_state_sequence(_Config) ->
     ct:log("Testing states do not get confuddled given a random transition sequence."),
     ok = uffda_client:register_service('foo'),
-    'STARTING_UP' = uffda_client:service_status('foo'),
+    registered = uffda_client:service_status('foo'),
     ok = uffda_client:set_service_online('foo'),
-    'UP' = uffda_client:service_status('foo'),
+    up = uffda_client:service_status('foo'),
     Up_Down_Seq =
         ?FORALL([T1, T2], [transition(), transition()], begin
            ok = erlang:apply(uffda_client, T1, ['foo']),
            ok = erlang:apply(uffda_client, T2, ['foo']),
            case T2 of
-               set_service_online -> 'UP' =:= uffda_client:service_status('foo');
-               set_service_offline -> 'DOWN' =:= uffda_client:service_status('foo')
+               set_service_online  -> up   =:= uffda_client:service_status('foo');
+               set_service_offline -> down =:= uffda_client:service_status('foo')
            end
         end),
     true = proper:quickcheck(Up_Down_Seq, ?PQ_NUM(10)),
