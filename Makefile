@@ -27,4 +27,8 @@ release: clean-release all
 clean-release: clean-all
 	rm -rf rel/$(PROJECT)
 
+tags: all
+    /opt/local/bin/ctags --file-scope=no -R --languages=erlang .
+    
+
 include erlang.mk
