@@ -58,11 +58,11 @@ create_service(Name) -> spawn(?MODULE, startup, [Name, self()]).
 startup(Name, Caller) ->
     uffda_client:register_service(Name),
     Caller ! {ok, Name},
+    uffda_client:starting_service(Name, self()),
     service_loop(Name).
 
 -spec service_loop(atom()) -> term().
 service_loop(Name) ->
-    uffda_client:starting_service(Name, self()),
     receive
         die   -> exit(kill);
         up    -> uffda_client:set_service_online(Name);
