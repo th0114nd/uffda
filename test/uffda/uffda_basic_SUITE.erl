@@ -6,7 +6,7 @@
 -export([
         easy/1,
         crash/1,
-        check/3,
+        balance_check/3,
         name_checks/1,
         name_sanity/1,
         proc/1,
@@ -160,9 +160,11 @@ name_checks(_Config) ->
     ok = uffda_client:unregister_service(boop),
     [] = uffda_client:which_service_names().
 
-check([], _Reg, _UnReg) -> true;
-check([H|T], Reg, UnReg) ->
-    case random:uniform(1) of
+balance_check([], _Reg, UnReg) ->
+    [ok = uffda_client:unregister_service(Un) || Un <- UnReg],
+    true;
+balance_check([H|T], Reg, UnReg) ->
+    case random:uniform(3) of
         1 -> ok = uffda_client:register_service(H),
              NewReg = ordsets:add_element(H, Reg),
              true = ordsets:is_element(H, NewReg),
@@ -170,44 +172,39 @@ check([H|T], Reg, UnReg) ->
              Registered_Actual = uffda_client:which_service_names(),
              case NewReg == ordsets:from_list(Registered_Actual) of
                 false -> ct:log("NewRegList: ~p~n names: ~p~n", 
-                    [lists:sort(sets:to_list(NewReg)), lists:sort(Registered_Actual)]),
+                    [lists:sort(ordsets:to_list(NewReg)), lists:sort(Registered_Actual)]),
                          false = true;
                 _ -> true
-             end;
-        _ -> NewReg = ok,
-             ct:log("uhhhhhhhh~n")
-    end,
-    check(T, NewReg, UnReg).
-    
-%name_check_loop(_Expected, 0) -> ok;
-%name_check_loop(Expected, N) when N > 0 ->
-%   true = Expected == uffda_client:which_service_names(),
-%   name_check_loop(Expected, N - 1).
+             end,
+             balance_check(T, NewReg, [H | UnReg]);
+        2 when UnReg /= [] -> Index = random:uniform(length(UnReg)),
+             Service = lists:nth(Index, UnReg),
+             NewUnReg = lists:delete(Service, UnReg),
+             NewReg = ordsets:del_element(Service, Reg),
+             ok = uffda_client:unregister_service(Service),
+             Registered_Actual = uffda_client:which_service_names(),
+             ct:log("NR: ~p~n RA: ~p~n", [NewReg, Registered_Actual]),
+             NewReg == ordsets:from_list(Registered_Actual),
+             balance_check([H|T], NewReg, NewUnReg);
+        2 -> balance_check([H|T], Reg, UnReg);
+        3 -> ct:sleep(10), 
+             balance_check([H|T], Reg, UnReg)
+    end.
 
 name_sanity(_Config) ->
     Names = ['','+¬b!Vd','õ\026','\037þ\020o×3]\d×','\210','=',
                      '-\235\b\bM','¾\036'],
     Run = fun() -> [] = uffda_client:which_service_names(),
-                   true = check(Names, ordsets:new(), []),
-                   [ok = uffda_client:unregister_service(Name) || Name <- Names]
+                   true = balance_check(Names, ordsets:new(), [])
                    end,
     [Run() || _ <- lists:seq(1, 100)].
 
 proper_name_checks(_Config) ->
     ct:log("Registered services are the expected ones."),
-    check([''], ordsets:new(), []),
-    check(['', ''], ordsets:new(), []),
-    check(['', '', '', '', '', '', '', '', '', '', '', '', ''], ordsets:new(), []),
-    uffda_client:unregister_service(''),
-    check(['hello', 'world', 'please'], ordsets:new(), []),
-    [ok = uffda_client:unregister_service(Name) || Name <- ['hello', 'world', 'please']],
-%    Balanced = fun(Listy) -> ct:log("Len: ~p~n", [length(Listy)]), true end,
     NCs = ?FORALL(NameList, list(atom()), 
             ?IMPLIES(length(NameList) < 10, 
                       begin
                           UniqueNameList = ordsets:to_list(ordsets:from_list(NameList)),
-                          true = check(UniqueNameList, ordsets:new(), []),
-                          [ok = uffda_client:unregister_service(Name) || Name <- UniqueNameList],
-                          true
+                          true = balance_check(UniqueNameList, ordsets:new(), [])
                       end)),
     true = proper:quickcheck(NCs, ?PQ_NUM(100)).

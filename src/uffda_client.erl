@@ -15,8 +15,6 @@
 
 -include("uffda.hrl").
 
--type service_descriptions() :: term().
-
 -spec which_service_pids() -> [service_pid()].
 which_service_pids() ->
     _FSM_Pids = uffda_registry_sup:which_children().
@@ -29,10 +27,7 @@ which_service_names() ->
 %% Register reserves a service name for future monitoring.
 -spec register_service   (service_name())                -> ok.
 -spec register_service   (service_name(), service_pid()) -> ok.
--spec unregister_service (Service_Pid)  -> ok | {error, {not_registered, Service_Pid}}
-                                               when Service_Pid :: service_pid();
-                         (Service_Name) -> ok | {error, {not_registered, Service_Name}}
-                                               when Service_Name :: service_name().
+-spec unregister_service (service_name()) -> ok.
 
 register_service(Service_Name)
   when is_atom(Service_Name) ->
@@ -49,8 +44,10 @@ register_service(Service_Name, Service_Pid)
 unregister_service(Service_Name)
   when is_atom(Service_Name) ->
     Fsm_Name = uffda_service_fsm:fsm_name_from_service(Service_Name),
-    Fsm_Pid = whereis(Fsm_Name),
-    uffda_registry_sup:stop_child(Fsm_Pid).
+    case whereis(Fsm_Name) of
+        undefined -> ok;
+        Fsm_Pid -> uffda_registry_sup:stop_child(Fsm_Pid)
+    end.
 
 
 %% Service events cause the Service FSM to change the service status.
