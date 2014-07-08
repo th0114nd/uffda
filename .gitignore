@@ -1,5 +1,6 @@
 .eunit
 deps
+doc/images
 ebin
 log
 logs
