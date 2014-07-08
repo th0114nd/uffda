@@ -143,16 +143,16 @@ proper_sanity(_Config) ->
 -type transition() :: set_service_online | set_service_offline.
 proper_state_sequence(_Config) ->
     ct:log("Testing states do not get confuddled given a random transition sequence."),
-    ok = uffda_client:register_service('foo'),
-    registered = uffda_client:service_status('foo'),
-    ok = uffda_client:set_service_online('foo'),
-    up = uffda_client:service_status('foo'),
+    uffda_client:register_service('foo'),
+    uffda_client:starting_service('foo', self()),
+    uffda_client:set_service_online('foo'), 
     Up_Down_Seq =
         ?FORALL([T1, T2], [transition(), transition()], begin
            ok = erlang:apply(uffda_client, T1, ['foo']),
            ok = erlang:apply(uffda_client, T2, ['foo']),
+           ct:log("~p", [uffda_client:service_status('foo')]),
            case T2 of
-               set_service_online  -> up   =:= uffda_client:service_status('foo');
+               set_service_online -> up =:= uffda_client:service_status('foo');
                set_service_offline -> down =:= uffda_client:service_status('foo')
            end
         end),
