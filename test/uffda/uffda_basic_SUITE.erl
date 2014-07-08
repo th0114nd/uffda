@@ -6,7 +6,9 @@
 -export([
         easy/1,
         crash/1,
+        check/3,
         name_checks/1,
+        name_sanity/1,
         proc/1,
         proper_name_checks/1,
         proper_sanity/1,
@@ -26,6 +28,7 @@ all() -> [
     proc,
     crash,
     name_checks,
+    name_sanity,
     proper_sanity,
     group_query_checks,
     proper_name_checks
@@ -150,9 +153,10 @@ name_checks(_Config) ->
     ok = uffda_client:register_service(baz),
     [baz] = uffda_client:which_service_names(),
     ok = uffda_client:register_service(boop),
-    true = sets:from_list([baz, boop]) == sets:from_list(uffda_client:which_service_names()),
+    true = ordsets:from_list([baz, boop]) == 
+           ordsets:from_list(uffda_client:which_service_names()),
     ok = uffda_client:unregister_service(baz),
-    true = sets:from_list([boop]) == sets:from_list(uffda_client:which_service_names()),
+    true = ordsets:from_list([boop]) == ordsets:from_list(uffda_client:which_service_names()),
     ok = uffda_client:unregister_service(boop),
     [] = uffda_client:which_service_names().
 
@@ -160,10 +164,16 @@ check([], _Reg, _UnReg) -> true;
 check([H|T], Reg, UnReg) ->
     case random:uniform(1) of
         1 -> ok = uffda_client:register_service(H),
-             NewReg = sets:add_element(H, Reg),
-             true = sets:is_element(H, NewReg),
-             true = sets:is_subset(Reg, NewReg),
-             true = NewReg == sets:from_list(uffda_client:which_service_names());
+             NewReg = ordsets:add_element(H, Reg),
+             true = ordsets:is_element(H, NewReg),
+             true = ordsets:is_subset(Reg, NewReg),
+             Registered_Actual = uffda_client:which_service_names(),
+             case NewReg == ordsets:from_list(Registered_Actual) of
+                false -> ct:log("NewRegList: ~p~n names: ~p~n", 
+                    [lists:sort(sets:to_list(NewReg)), lists:sort(Registered_Actual)]),
+                         false = true;
+                _ -> true
+             end;
         _ -> NewReg = ok,
              ct:log("uhhhhhhhh~n")
     end,
@@ -174,21 +184,30 @@ check([H|T], Reg, UnReg) ->
 %   true = Expected == uffda_client:which_service_names(),
 %   name_check_loop(Expected, N - 1).
 
+name_sanity(_Config) ->
+    Names = ['','+¬b!Vd','õ\026','\037þ\020o×3]\d×','\210','=',
+                     '-\235\b\bM','¾\036'],
+    Run = fun() -> [] = uffda_client:which_service_names(),
+                   true = check(Names, ordsets:new(), []),
+                   [ok = uffda_client:unregister_service(Name) || Name <- Names]
+                   end,
+    [Run() || _ <- lists:seq(1, 100)].
+
 proper_name_checks(_Config) ->
     ct:log("Registered services are the expected ones."),
-    check([''], sets:new(), []),
-    check(['', ''], sets:new(), []),
-    check(['', '', '', '', '', '', '', '', '', '', '', '', ''], sets:new(), []),
+    check([''], ordsets:new(), []),
+    check(['', ''], ordsets:new(), []),
+    check(['', '', '', '', '', '', '', '', '', '', '', '', ''], ordsets:new(), []),
     uffda_client:unregister_service(''),
-    check(['hello', 'world', 'please'], sets:new(), []),
+    check(['hello', 'world', 'please'], ordsets:new(), []),
     [ok = uffda_client:unregister_service(Name) || Name <- ['hello', 'world', 'please']],
 %    Balanced = fun(Listy) -> ct:log("Len: ~p~n", [length(Listy)]), true end,
     NCs = ?FORALL(NameList, list(atom()), 
-            ?IMPLIES((20 < length(NameList)) and (length(NameList) < 1000), 
+            ?IMPLIES(length(NameList) < 10, 
                       begin
-                          UniqueNameList = sets:to_list(sets:from_list(NameList)),
-                          true = check(UniqueNameList, sets:new(), []),
+                          UniqueNameList = ordsets:to_list(ordsets:from_list(NameList)),
+                          true = check(UniqueNameList, ordsets:new(), []),
                           [ok = uffda_client:unregister_service(Name) || Name <- UniqueNameList],
                           true
                       end)),
-    true = proper:quickcheck(NCs, ?PQ_NUM(10)).
+    true = proper:quickcheck(NCs, ?PQ_NUM(100)).
