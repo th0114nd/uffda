@@ -1,0 +1,46 @@
+Copyright 2014 TigerText. All Rights Reserved.
+
+Authors: Tim Holland <tholland@caltech.edu>,
+         Pierce McEntagart <pierce.mt92@gmail.com>,
+	  and Jay Nelson <jay@tigertext.com>
+
+This file is part of Uffda.
+
+Uffda is free software: you can redistribute it and/or modify
+it under the terms of the MIT Public License.
+
+Uffda is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+MIT Public License for more details.
+
+You should have received a copy of the MIT Public License
+along with Uffda.  If not, see <http://http://opensource.org/licenses/MIT>.
+
+
+This is the source for Uffda's overview page.
+
+@copyright 2014 TigerText
+@version {@version}
+
+@title Uffda: Service registry
+
+@doc Uffda ([http://en.wikipedia.org/wiki/Uffda]) is a Scandanavian-American term of dismay.
+The Uffda Service Registry can be consulted to determine the current status of a
+user-provided service. The {@link uffda_client} module provides a list of the
+valid service states.
+
+The following modules are included in Uffda:
+
+<dl>
+<dt>{@link uffda}</dt>
+<dd>Starting and stopping the application</dd>
+<dt>{@link uffda_client}</dt>
+<dd>The Client API used by other applications to interact with the Uffda Service Registry</dd>
+<dt>{@link uffda_registry_sup}</dt>
+<dd>Root supervisor of the Uffda Service Registry</dd>
+<dt>{@link uffda_service}</dt>
+<dd>An Uffda Service behaviour for user-provided services to be monitored properly</dd>
+<dt>{@link uffda_service_fsm}</dt>
+<dd>The FSM used to monitor the state of a single user-provided service</dd>
+</dl>

@@ -20,18 +20,13 @@ which_services() ->
     _FSM_Pids = uffda_registry_sup:which_children().
 
 %% Register reserves a service name for future monitoring.
--spec register_service   (service_name())                -> ok.
--spec register_service   (service_name(), service_pid()) -> ok.
--spec unregister_service (Service_Pid)  -> ok | {error, {not_registered, Service_Pid}}
-                                               when Service_Pid :: service_pid();
-                         (Service_Name) -> ok | {error, {not_registered, Service_Name}}
-                                               when Service_Name :: service_name().
-
+-spec register_service(service_name()) -> ok.
 register_service(Service_Name)
   when is_atom(Service_Name) ->
     _ = uffda_registry_sup:start_child(Service_Name),
     ok.
 
+-spec register_service   (service_name(), service_pid()) -> ok.
 register_service(Service_Name, Service_Pid)
   when is_atom(Service_Name), is_pid(Service_Pid) ->
     case uffda_registry_sup:start_child(Service_Name, Service_Pid) of
@@ -63,15 +58,21 @@ get_registered_fsm(Service_Name) ->
 -type event_response()  :: {error, {not_registered, service_name()}} | ok.
 -type status_response() :: {error, {not_registered, service_name()}} | service_status().
 
--spec starting_service    (service_name(), service_pid()) -> event_response().
--spec set_service_online  (service_name()) -> event_response().
+-spec starting_service(service_name(), service_pid()) -> event_response().
+%%% @doc starting_service
+starting_service(Service_Name, Service_Pid) -> trigger_event(Service_Name, Service_Pid, starting).
+
+-spec set_service_online(service_name()) -> event_response().
+%%% @doc set_service_online
+set_service_online(Service_Name) -> trigger_event(Service_Name, online).
+
 -spec set_service_offline (service_name()) -> event_response().
--spec service_status      (service_name()) -> status_response().
-    
-starting_service    (Service_Name, Service_Pid) -> trigger_event(Service_Name, Service_Pid, starting).
-set_service_online  (Service_Name) -> trigger_event     (Service_Name, online).
-set_service_offline (Service_Name) -> trigger_event     (Service_Name, offline).
-service_status      (Service_Name) -> trigger_all_event (Service_Name, current_status).
+%%% @doc set_service_offline
+set_service_offline(Service_Name) -> trigger_event(Service_Name, offline).
+
+-spec service_status(service_name()) -> status_response().
+%%% @doc service_status
+service_status(Service_Name) -> trigger_all_event(Service_Name, current_status).
 
 trigger_event(Service_Name, Service_Pid, Service_Event)
   when is_atom(Service_Name), is_pid(Service_Pid) ->

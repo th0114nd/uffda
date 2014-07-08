@@ -146,8 +146,8 @@ set_restarting_with_timeout(State_Data, Timeout) ->
 -spec ?STATE_DELAYED_RESTART (service_event(), state_data())
                              -> {next_state, fsm_state_name(), state_data()}.
 
-?STATE_DELAYED_START   (Event, State_Data) -> delayed_transition(Event, State_Data, ?STATE_STARTING_UP).
-?STATE_DELAYED_RESTART (Event, State_Data) -> delayed_transition(Event, State_Data, ?STATE_RESTARTING).
+?STATE_DELAYED_START   (Event, State_Data) -> delayed_transition(Event, State_Data, ?STATE_DELAYED_START).
+?STATE_DELAYED_RESTART (Event, State_Data) -> delayed_transition(Event, State_Data, ?STATE_DELAYED_RESTART).
 
 delayed_transition({starting, Service_Pid}, #state_data{name=Service_Name} = State_Data, ?STATE_DELAYED_START) ->
     set_starting_up_with_timeout(reinitialize(Service_Name, Service_Pid, State_Data));
