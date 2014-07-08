@@ -181,7 +181,8 @@ name_checks(_Config) ->
     ok = uffda_client:unregister_service(baz),
     true = ordsets:from_list([boop]) == ordsets:from_list(uffda_client:which_service_names()),
     ok = uffda_client:unregister_service(boop),
-    [] = uffda_client:which_service_names().
+    [] = uffda_client:which_service_names(),
+    ct:comment("A basic way to check names~n").
 
 balance_check([], _Reg, UnReg) ->
     [ok = uffda_client:unregister_service(Un) || Un <- UnReg],
@@ -194,8 +195,7 @@ balance_check([H|T], Reg, UnReg) ->
              true = ordsets:is_subset(Reg, NewReg),
              Registered_Actual = uffda_client:which_service_names(),
              case NewReg == ordsets:from_list(Registered_Actual) of
-                false -> ct:log("NewRegList: ~p~n names: ~p~n", 
-                    [lists:sort(ordsets:to_list(NewReg)), lists:sort(Registered_Actual)]),
+                false -> [lists:sort(ordsets:to_list(NewReg)), lists:sort(Registered_Actual)],
                          false = true;
                 _ -> true
              end,
@@ -206,7 +206,6 @@ balance_check([H|T], Reg, UnReg) ->
              NewReg = ordsets:del_element(Service, Reg),
              ok = uffda_client:unregister_service(Service),
              Registered_Actual = uffda_client:which_service_names(),
-             ct:log("NR: ~p~n RA: ~p~n", [NewReg, Registered_Actual]),
              NewReg == ordsets:from_list(Registered_Actual),
              balance_check([H|T], NewReg, NewUnReg);
         2 -> balance_check([H|T], Reg, UnReg);
@@ -220,14 +219,19 @@ name_sanity(_Config) ->
     Run = fun() -> [] = uffda_client:which_service_names(),
                    true = balance_check(Names, ordsets:new(), [])
                    end,
-    [Run() || _ <- lists:seq(1, 100)].
+    [Run() || _ <- lists:seq(1, 5)],
+    ct:comment("A basic check that state is properly cleaned up.").
 
 proper_name_checks(_Config) ->
     ct:log("Registered services are the expected ones."),
     NCs = ?FORALL(NameList, list(atom()), 
-            ?IMPLIES(length(NameList) < 10, 
+            ?IMPLIES((10 < length(NameList)) and (length(NameList) < 200),
                       begin
                           UniqueNameList = ordsets:to_list(ordsets:from_list(NameList)),
                           true = balance_check(UniqueNameList, ordsets:new(), [])
                       end)),
-    true = proper:quickcheck(NCs, ?PQ_NUM(100)).
+    true = case proper:quickcheck(NCs, ?PQ_NUM(3)) of
+        true -> true;
+        false -> ct:log("Counterexamples: ~p~n", [proper:counterexamples()]), false
+    end,
+    ct:comment("Tested that registering maintains the available names properly.").
