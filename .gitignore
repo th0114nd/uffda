@@ -3,6 +3,7 @@ deps
 ebin
 log
 logs
+tags
 rel
 *.beam
 *.o

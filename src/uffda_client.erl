@@ -8,16 +8,20 @@
          set_service_online/1,
          set_service_offline/1,
          service_status/1,
-         which_services/0
+         which_service_pids/0,
+         which_service_names/0
         ]).
 
 -include("uffda.hrl").
 
--type service_descriptions() :: term().
-
--spec which_services() -> [service_descriptions()].
-which_services() ->
+-spec which_service_pids() -> [service_pid()].
+which_service_pids() ->
     _FSM_Pids = uffda_registry_sup:which_children().
+
+-spec which_service_names() -> [service_name()].
+which_service_names() ->
+    FSM_Pids = which_service_pids(),
+    [gen_fsm:sync_send_all_state_event(Pid, get_service_name) || Pid <- FSM_Pids].
 
 %% Register reserves a service name for future monitoring.
 -spec register_service(service_name()) -> ok.
@@ -35,6 +39,7 @@ register_service(Service_Name, Service_Pid)
             trigger_all_event(Fsm_Pid, {re_init, Service_Pid})
     end.
 
+-spec unregister_service(service_name()) -> ok | {error, term()}.
 unregister_service(Service_Name)
   when is_atom(Service_Name) ->
     case get_registered_fsm(Service_Name) of

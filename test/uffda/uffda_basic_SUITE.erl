@@ -6,7 +6,11 @@
 -export([
         easy/1,
         crash/1,
+        balance_check/3,
+        name_checks/1,
+        name_sanity/1,
         proc/1,
+        proper_name_checks/1,
         proper_sanity/1,
         group_query_checks/1,
         proper_state_sequence/1
@@ -24,9 +28,12 @@ all() -> [
     easy,
     proc,
     crash,
+    name_checks,
+    name_sanity,
     proper_sanity,
     group_query_checks,
-    proper_state_sequence
+    proper_state_sequence,
+    proper_name_checks
     ].
 
 init_per_suite(Config) -> Config.
@@ -121,7 +128,7 @@ crash(_Config) ->
     ok.
 
 proper_sanity(_Config) ->
-    ct:log("A new fsm is always in the 'STARTING_UP' state."),
+    ct:log("A new fsm always has starting_up status."),
     ok = uffda_client:register_service('0'),
     registered = uffda_client:service_status('0'),
     Test_Down_Init =
@@ -154,11 +161,73 @@ proper_state_sequence(_Config) ->
 
 group_query_checks(_Config) ->
     ct:log("Checking that queries run properly."),
-    [] = uffda_client:which_services(),
+    [] = uffda_client:which_service_pids(),
     ok = uffda_client:register_service(baz),
-    [Content] = uffda_client:which_services(),
+    [Content] = uffda_client:which_service_pids(),
     ok = uffda_client:register_service(boop),
-    [_, _] = uffda_client:which_services(),
-    true = lists:member(Content, uffda_client:which_services()),
+    [_, _] = uffda_client:which_service_pids(),
+    true = lists:member(Content, uffda_client:which_service_pids()),
     ok = uffda_client:unregister_service(boop),
-    [Content] = uffda_client:which_services().
+    [Content] = uffda_client:which_service_pids().
+
+name_checks(_Config) ->
+    ct:log("Names expected are names returned."),
+    [] = uffda_client:which_service_names(),
+    ok = uffda_client:register_service(baz),
+    [baz] = uffda_client:which_service_names(),
+    ok = uffda_client:register_service(boop),
+    true = ordsets:from_list([baz, boop]) == 
+           ordsets:from_list(uffda_client:which_service_names()),
+    ok = uffda_client:unregister_service(baz),
+    true = ordsets:from_list([boop]) == ordsets:from_list(uffda_client:which_service_names()),
+    ok = uffda_client:unregister_service(boop),
+    [] = uffda_client:which_service_names().
+
+balance_check([], _Reg, UnReg) ->
+    [ok = uffda_client:unregister_service(Un) || Un <- UnReg],
+    true;
+balance_check([H|T], Reg, UnReg) ->
+    case random:uniform(3) of
+        1 -> ok = uffda_client:register_service(H),
+             NewReg = ordsets:add_element(H, Reg),
+             true = ordsets:is_element(H, NewReg),
+             true = ordsets:is_subset(Reg, NewReg),
+             Registered_Actual = uffda_client:which_service_names(),
+             case NewReg == ordsets:from_list(Registered_Actual) of
+                false -> ct:log("NewRegList: ~p~n names: ~p~n", 
+                    [lists:sort(ordsets:to_list(NewReg)), lists:sort(Registered_Actual)]),
+                         false = true;
+                _ -> true
+             end,
+             balance_check(T, NewReg, [H | UnReg]);
+        2 when UnReg /= [] -> Index = random:uniform(length(UnReg)),
+             Service = lists:nth(Index, UnReg),
+             NewUnReg = lists:delete(Service, UnReg),
+             NewReg = ordsets:del_element(Service, Reg),
+             ok = uffda_client:unregister_service(Service),
+             Registered_Actual = uffda_client:which_service_names(),
+             ct:log("NR: ~p~n RA: ~p~n", [NewReg, Registered_Actual]),
+             NewReg == ordsets:from_list(Registered_Actual),
+             balance_check([H|T], NewReg, NewUnReg);
+        2 -> balance_check([H|T], Reg, UnReg);
+        3 -> ct:sleep(10), 
+             balance_check([H|T], Reg, UnReg)
+    end.
+
+name_sanity(_Config) ->
+    Names = ['','+¬b!Vd','õ\026','\037þ\020o×3]\d×','\210','=',
+                     '-\235\b\bM','¾\036'],
+    Run = fun() -> [] = uffda_client:which_service_names(),
+                   true = balance_check(Names, ordsets:new(), [])
+                   end,
+    [Run() || _ <- lists:seq(1, 100)].
+
+proper_name_checks(_Config) ->
+    ct:log("Registered services are the expected ones."),
+    NCs = ?FORALL(NameList, list(atom()), 
+            ?IMPLIES(length(NameList) < 10, 
+                      begin
+                          UniqueNameList = ordsets:to_list(ordsets:from_list(NameList)),
+                          true = balance_check(UniqueNameList, ordsets:new(), [])
+                      end)),
+    true = proper:quickcheck(NCs, ?PQ_NUM(100)).
