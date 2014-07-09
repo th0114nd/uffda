@@ -12,7 +12,6 @@
         proc/1,
         proper_name_checks/1,
         proper_sanity/1,
-        group_query_checks/1,
         proper_state_sequence/1
         ]).
 
@@ -31,7 +30,6 @@ all() -> [
     name_checks,
     name_sanity,
     proper_sanity,
-    group_query_checks,
     proper_state_sequence,
     proper_name_checks
     ].
@@ -158,17 +156,6 @@ proper_state_sequence(_Config) ->
         end),
     true = proper:quickcheck(Up_Down_Seq, ?PQ_NUM(10)),
     ok.
-
-group_query_checks(_Config) ->
-    ct:log("Checking that queries run properly."),
-    [] = uffda_client:which_service_pids(),
-    ok = uffda_client:register_service(baz),
-    [Content] = uffda_client:which_service_pids(),
-    ok = uffda_client:register_service(boop),
-    [_, _] = uffda_client:which_service_pids(),
-    true = lists:member(Content, uffda_client:which_service_pids()),
-    ok = uffda_client:unregister_service(boop),
-    [Content] = uffda_client:which_service_pids().
 
 name_checks(_Config) ->
     ct:log("Names expected are names returned."),

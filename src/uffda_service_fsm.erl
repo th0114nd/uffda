@@ -80,7 +80,7 @@ start_link(Service_Name, Service_Pid) ->
     gen_fsm:start_link({local, Service_Fsm}, ?MODULE, {Service_Name, Service_Pid}, []).
 
 fsm_name_from_service(Service_Name) ->
-    atom_to_list(Service_Name) ++ "_fsm".
+    atom_to_list(Service_Name) ++ "_uffda_service_fsm".
 
 
 %%----------------------------------------------------
