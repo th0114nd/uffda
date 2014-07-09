@@ -61,7 +61,7 @@ stop_child(Pid)
 
 -spec which_services() -> [service_fsm_pid()].
 %% @doc
-%%   Fetch a list of the registered {@link uffda_service_fsm} names.
+%   Fetch a list of the registered {@link uffda_service_fsm} pids.
 %% @end
 which_services() ->
     [Pid || {undefined, Pid, worker, _Mod} <- supervisor:which_children(?SERVER)].
