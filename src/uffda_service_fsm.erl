@@ -1,3 +1,6 @@
+%% @doc
+%%   <img src="images/states.png">
+%% @end
 -module(uffda_service_fsm).
 -behavior(gen_fsm).
 
