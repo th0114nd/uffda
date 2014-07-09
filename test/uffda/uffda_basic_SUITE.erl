@@ -12,7 +12,8 @@
         proc/1,
         proper_name_checks/1,
         proper_sanity/1,
-        proper_state_sequence/1
+        proper_state_sequence/1,
+        proper_random_seq/1
         ]).
 
 -export([
@@ -31,6 +32,7 @@ all() -> [
     name_sanity,
     proper_sanity,
     proper_state_sequence,
+    proper_random_seq,
     proper_name_checks
     ].
 
@@ -155,6 +157,33 @@ proper_state_sequence(_Config) ->
            end
         end),
     true = proper:quickcheck(Up_Down_Seq, ?PQ_NUM(10)),
+    ok.
+
+-type more_trans() :: starting_service | transition().
+proper_random_seq(_Config) ->
+    ct:log("Testing more complex transition sequences."),
+    uffda_client:register_service('foo'),
+    uffda_client:starting_service('foo', self()),
+    uffda_client:set_service_online('foo'),
+    Rand_Seq = ?FORALL(Transition_List, list(more_trans()),
+        ?IMPLIES((length(Transition_List) < 20) and (length(Transition_List) > 0), begin
+            New_State =
+                lists:foldl(fun(Action, _) ->
+                                case Action of
+                                    starting_service -> Args = ['foo', self()];
+                                    _ -> Args = ['foo']
+                                end,
+                                apply(uffda_client, Action, Args),
+                                uffda_client:service_status('foo')
+                            end,
+                            uffda_client:service_status('foo'), Transition_List),
+            case lists:last(Transition_List) of
+                set_service_offline -> down =:= New_State;
+                set_service_online -> up =:= New_State;
+                starting_service -> (starting_up =:= New_State) or (restarting =:= New_State)
+            end
+        end)),
+    true = proper:quickcheck(Rand_Seq, ?PQ_NUM(10)),
     ok.
 
 name_checks(_Config) ->
