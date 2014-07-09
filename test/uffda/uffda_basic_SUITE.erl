@@ -133,10 +133,11 @@ proper_sanity(_Config) ->
     registered = uffda_client:service_status('0'),
     Test_Down_Init =
         ?FORALL(Name, ?SUCHTHAT(Name, atom(), Name =/= ''),
+            ?TIMEOUT(50,
                 begin
                     ok = uffda_client:register_service(Name),
                     registered =:= uffda_client:service_status(Name)
-                end),
+                end)),
     true = proper:quickcheck(Test_Down_Init, ?PQ_NUM(10)),
     ok.
 
@@ -147,15 +148,19 @@ proper_state_sequence(_Config) ->
     uffda_client:starting_service('foo', self()),
     uffda_client:set_service_online('foo'), 
     Up_Down_Seq =
-        ?FORALL([T1, T2], [transition(), transition()], begin
-           ok = erlang:apply(uffda_client, T1, ['foo']),
-           ok = erlang:apply(uffda_client, T2, ['foo']),
-           ?WHENFAIL(ct:log("T1:~p~nT2:~p", [T1, T2]), 
-               case T2 of
-                   set_service_online -> up =:= uffda_client:service_status('foo');
-                   set_service_offline -> down =:= uffda_client:service_status('foo')
-               end)
-        end),
+        ?FORALL([T1, T2], [transition(), transition()],
+          ?TIMEOUT(50, 
+            begin      
+               ok = erlang:apply(uffda_client, T1, ['foo']),
+               ok = erlang:apply(uffda_client, T2, ['foo']),
+               ?WHENFAIL(ct:log("T1:~p~nT2:~p", [T1, T2]), 
+                   case T2 of
+                       set_service_online -> 
+                            up =:= uffda_client:service_status('foo');
+                       set_service_offline -> 
+                            down =:= uffda_client:service_status('foo')
+                   end)
+        end)),
     true = proper:quickcheck(Up_Down_Seq, ?PQ_NUM(10)),
     ok.
 
@@ -239,13 +244,11 @@ proper_name_checks(_Config) ->
     ct:log("Registered services are the expected ones."),
     NCs = ?FORALL(NameList, list(atom()), 
             ?IMPLIES((10 < length(NameList)) and (length(NameList) < 200),
-                      begin
-                          UniqueNameList = ordsets:to_list(ordsets:from_list(NameList)),
-                          ?WHENFAIL(ct:log("UNL: ~p", [UniqueNameList]), 
-                            balance_check(UniqueNameList, ordsets:new(), []))
-                      end)),
-    true = case proper:quickcheck(NCs, ?PQ_NUM(3)) of
-        true -> true;
-        false -> ct:log("Counterexamples: ~p~n", [proper:counterexamples()]), false
-    end,
+              ?TIMEOUT(5000,
+                  begin
+                      UniqueNameList = ordsets:to_list(ordsets:from_list(NameList)),
+                      ?WHENFAIL(ct:log("UNL: ~p", [UniqueNameList]), 
+                        balance_check(UniqueNameList, ordsets:new(), []))
+                  end))),
+    true = proper:quickcheck(NCs, ?PQ_NUM(3)),
     ct:comment("Tested that registering maintains the available names properly.").
