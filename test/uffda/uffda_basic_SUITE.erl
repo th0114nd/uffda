@@ -1,3 +1,16 @@
+%% @doc
+%%   Uses common_test suites to drive PropEr testing of uffda.
+%%   The following properties are tested:
+%%
+%%   <ol>
+%%     <li>Register/unregister followed by which_services reports correctly.<br>
+%%     <li>Starting up/restarting can't last forever.<br>
+%%     <li>Any sequence of up/down/crash/restart should reflect proper state.<br>
+%%     <li>Any series of uffda_client calls shouldn't crash regardless of order.<br>
+%%     <li>A service supervised without restart should reflect down/crashed when M of N services are killed.<br>
+%%     <li>A service supervised with R restarts should reflect state changes with repeated failure and M of N services are killed.<br>
+%%   </ol>
+%% @end
 -module(uffda_basic_SUITE).
 -vsn('').
 
