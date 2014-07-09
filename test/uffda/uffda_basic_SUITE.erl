@@ -3,12 +3,12 @@
 %%   The following properties are tested:
 %%
 %%   <ol>
-%%     <li>Register/unregister followed by which_services reports correctly.<br>
-%%     <li>Starting up/restarting can't last forever.<br>
-%%     <li>Any sequence of up/down/crash/restart should reflect proper state.<br>
-%%     <li>Any series of uffda_client calls shouldn't crash regardless of order.<br>
-%%     <li>A service supervised without restart should reflect down/crashed when M of N services are killed.<br>
-%%     <li>A service supervised with R restarts should reflect state changes with repeated failure and M of N services are killed.<br>
+%%     <li>Register/unregister followed by which_services reports correctly.</li>
+%%     <li>Starting up/restarting can't last forever.</li>
+%%     <li>Any sequence of up/down/crash/restart should reflect proper state.</li>
+%%     <li>Any series of uffda_client calls shouldn't crash regardless of order.</li>
+%%     <li>A service supervised without restart should reflect down/crashed when M of N services are killed.</li>
+%%     <li>A service supervised with R restarts should reflect state changes with repeated failure and M of N services are killed.</li>
 %%   </ol>
 %% @end
 -module(uffda_basic_SUITE).
@@ -36,6 +36,7 @@
 
 -include("uffda_common_test.hrl").
 
+-spec all() -> [module()].
 all() -> [
     easy,
     easy,
@@ -49,13 +50,20 @@ all() -> [
     proper_name_checks
     ].
 
+-type config() :: proplists:proplist().
+
+-spec init_per_suite(config()) -> config().
 init_per_suite(Config) -> Config.
+
+-spec end_per_suite(config()) -> config().
 end_per_suite(Config) -> Config.
 
+-spec init_per_testcase(module(), config()) -> config().
 init_per_testcase(_TestCase, Config) ->
     ok = uffda:start(),
     Config.
 
+-spec end_per_testcase(module(), config()) -> config().
 end_per_testcase(_TestCase, _Config) ->
     uffda:stop().
 
@@ -140,6 +148,7 @@ crash(_Config) ->
     ct:comment("Tested FSM reaction to a crashing function service"),
     ok.
 
+-spec proper_sanity(term()) -> ok.
 proper_sanity(_Config) ->
     ct:log("A new fsm always has starting_up status."),
     ok = uffda_client:register_service('0'),
@@ -155,6 +164,7 @@ proper_sanity(_Config) ->
     ok.
 
 -type transition() :: set_service_online | set_service_offline.
+-spec proper_state_sequence(term()) -> ok.
 proper_state_sequence(_Config) ->
     ct:log("Testing states do not get confuddled given a random transition sequence."),
     uffda_client:register_service('foo'),
@@ -178,6 +188,7 @@ proper_state_sequence(_Config) ->
     ok.
 
 -type more_trans() :: starting_service | transition().
+-spec proper_random_seq(term()) -> ok.
 proper_random_seq(_Config) ->
     ct:log("Testing more complex transition sequences."),
     uffda_client:register_service('foo'),
@@ -205,6 +216,7 @@ proper_random_seq(_Config) ->
     true = proper:quickcheck(Rand_Seq, ?PQ_NUM(10)),
     ok.
 
+-spec name_checks(term()) -> ok.
 name_checks(_Config) ->
     ct:log("Names expected are names returned."),
     [] = uffda_client:which_services(),
@@ -244,6 +256,7 @@ balance_check([H|T], Reg, UnReg) ->
              balance_check([H|T], Reg, UnReg)
     end.
 
+-spec name_sanity(term()) -> ok.
 name_sanity(_Config) ->
     Names = ['','+¬b!Vd','õ\026','\037þ\020o×3]\d×','\210','=',
                      '-\235\b\bM','¾\036'],
@@ -253,6 +266,7 @@ name_sanity(_Config) ->
     [Run() || _ <- lists:seq(1, 5)],
     ct:comment("A basic check that state is properly cleaned up.").
 
+-spec proper_name_checks(term()) -> ok.
 proper_name_checks(_Config) ->
     ct:log("Registered services are the expected ones."),
     NCs = ?FORALL(NameList, list(atom()), 
