@@ -3,9 +3,9 @@
 %%   The following properties are tested:
 %%
 %%   <ol>
-%%     <li>Register/unregister followed by which_services reports correctly.</li>
-%%     <li>Starting up/restarting can't last forever.</li>
-%%     <li>Any sequence of up/down/crash/restart should reflect proper state.</li>
+%%     <li>Register / unregister followed by which_services reports correctly.</li>
+%%     <li>Starting up / restarting can't last forever.</li>
+%%     <li>Any sequence of up / down / crash / restart should reflect proper state.</li>
 %%     <li>Any series of uffda_client calls shouldn't crash regardless of order.</li>
 %%     <li>A service supervised without restart should reflect down/crashed when M of N services are killed.</li>
 %%     <li>A service supervised with R restarts should reflect state changes with repeated failure and M of N services are killed.</li>
@@ -36,7 +36,6 @@
 
 -include("uffda_common_test.hrl").
 
--spec all() -> [module()].
 all() -> [
     easy,
     easy,
