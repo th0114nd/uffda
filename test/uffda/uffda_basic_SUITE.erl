@@ -26,18 +26,18 @@
 -include("uffda_common_test.hrl").
 
 all() -> [
-    %easy,
-    %easy,
-    %proc,
-    %crash,
-    %name_checks,
-    %name_sanity,
-    %proper_sanity,
-    %group_query_checks,
+    easy,
+    easy,
+    proc,
+    crash,
+    name_checks,
+    name_sanity,
+    proper_sanity,
+    group_query_checks,
     proper_state_sequence,
     proper_random_seq,
-    proper_valid_events
-    %proper_name_checks
+    proper_valid_events,
+    proper_name_checks
     ].
 
 init_per_suite(Config) -> Config.
