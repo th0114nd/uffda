@@ -17,7 +17,7 @@
 
 -spec which_services() -> [service_descriptions()].
 which_services() ->
-    _FSM_Pids = uffda_registry_sup:which_children().
+    uffda_registry_sup:which_services().
 
 %% Register reserves a service name for future monitoring.
 -spec register_service(service_name()) -> ok.
