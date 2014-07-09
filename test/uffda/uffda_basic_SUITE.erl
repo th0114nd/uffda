@@ -150,11 +150,11 @@ proper_state_sequence(_Config) ->
         ?FORALL([T1, T2], [transition(), transition()], begin
            ok = erlang:apply(uffda_client, T1, ['foo']),
            ok = erlang:apply(uffda_client, T2, ['foo']),
-           ct:log("~p", [uffda_client:service_status('foo')]),
-           case T2 of
-               set_service_online -> up =:= uffda_client:service_status('foo');
-               set_service_offline -> down =:= uffda_client:service_status('foo')
-           end
+           ?WHENFAIL(ct:log("T1:~p~nT2:~p", [T1, T2]), 
+               case T2 of
+                   set_service_online -> up =:= uffda_client:service_status('foo');
+                   set_service_offline -> down =:= uffda_client:service_status('foo')
+               end)
         end),
     true = proper:quickcheck(Up_Down_Seq, ?PQ_NUM(10)),
     ok.
@@ -169,19 +169,20 @@ proper_random_seq(_Config) ->
         ?IMPLIES((length(Transition_List) < 20) and (length(Transition_List) > 0), begin
             New_State =
                 lists:foldl(fun(Action, _) ->
-                                case Action of
-                                    starting_service -> Args = ['foo', self()];
-                                    _ -> Args = ['foo']
+                                Args = case Action of
+                                    starting_service -> ['foo', self()];
+                                    _ -> ['foo']
                                 end,
                                 apply(uffda_client, Action, Args),
                                 uffda_client:service_status('foo')
                             end,
                             uffda_client:service_status('foo'), Transition_List),
-            case lists:last(Transition_List) of
-                set_service_offline -> down =:= New_State;
-                set_service_online -> up =:= New_State;
-                starting_service -> (starting_up =:= New_State) or (restarting =:= New_State)
-            end
+            ?WHENFAIL(ct:log("TList: ~p", [Transition_List]),
+                case lists:last(Transition_List) of
+                    set_service_offline -> down =:= New_State;
+                    set_service_online -> up =:= New_State;
+                    starting_service -> (starting_up =:= New_State) or (restarting =:= New_State)
+                end)
         end)),
     true = proper:quickcheck(Rand_Seq, ?PQ_NUM(10)),
     ok.
@@ -210,11 +211,7 @@ balance_check([H|T], Reg, UnReg) ->
              true = ordsets:is_element(H, NewReg),
              true = ordsets:is_subset(Reg, NewReg),
              Registered_Actual = uffda_client:which_services(),
-             case NewReg == ordsets:from_list(Registered_Actual) of
-                false -> [lists:sort(ordsets:to_list(NewReg)), lists:sort(Registered_Actual)],
-                         false = true;
-                _ -> true
-             end,
+             NewReg = ordsets:from_list(Registered_Actual),
              balance_check(T, NewReg, [H | UnReg]);
         2 when UnReg /= [] -> Index = random:uniform(length(UnReg)),
              Service = lists:nth(Index, UnReg),
@@ -222,7 +219,7 @@ balance_check([H|T], Reg, UnReg) ->
              NewReg = ordsets:del_element(Service, Reg),
              ok = uffda_client:unregister_service(Service),
              Registered_Actual = uffda_client:which_services(),
-             NewReg == ordsets:from_list(Registered_Actual),
+             NewReg = ordsets:from_list(Registered_Actual),
              balance_check([H|T], NewReg, NewUnReg);
         2 -> balance_check([H|T], Reg, UnReg);
         3 -> ct:sleep(10), 
@@ -244,7 +241,8 @@ proper_name_checks(_Config) ->
             ?IMPLIES((10 < length(NameList)) and (length(NameList) < 200),
                       begin
                           UniqueNameList = ordsets:to_list(ordsets:from_list(NameList)),
-                          true = balance_check(UniqueNameList, ordsets:new(), [])
+                          ?WHENFAIL(ct:log("UNL: ~p", [UniqueNameList]), 
+                            balance_check(UniqueNameList, ordsets:new(), []))
                       end)),
     true = case proper:quickcheck(NCs, ?PQ_NUM(3)) of
         true -> true;
