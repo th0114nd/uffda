@@ -4,8 +4,10 @@ TEST_DEPS = proper
 dep_proper = https://github.com/manopapad/proper v1.1
 
 # Needed for testing
-CT_OPTS = -cover test/uffda.coverspec
-CT_SUITES = uffda_basic
+CT_OPTS := -cover test/uffda.coverspec
+CT_SUITES := uffda_basic
+
+EDOC_OPTS := {preprocess, true}, {source_path, ["src", "tests"]}, nopackages, {subpackages, true}
 
 SERVER := erl -pa ebin -pa deps/*/ebin -smp enable -setcookie CISFORCOOKIE
 HOST := `hostname` 
