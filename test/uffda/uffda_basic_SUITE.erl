@@ -14,7 +14,8 @@
         proper_sanity/1,
         group_query_checks/1,
         proper_state_sequence/1,
-        proper_random_seq/1
+        proper_random_seq/1,
+        proper_valid_events/1
         ]).
 
 -export([
@@ -25,17 +26,18 @@
 -include("uffda_common_test.hrl").
 
 all() -> [
-    easy,
-    easy,
-    proc,
-    crash,
-    name_checks,
-    name_sanity,
-    proper_sanity,
-    group_query_checks,
+    %easy,
+    %easy,
+    %proc,
+    %crash,
+    %name_checks,
+    %name_sanity,
+    %proper_sanity,
+    %group_query_checks,
     proper_state_sequence,
     proper_random_seq,
-    proper_name_checks
+    proper_valid_events
+    %proper_name_checks
     ].
 
 init_per_suite(Config) -> Config.
@@ -171,9 +173,9 @@ proper_random_seq(_Config) ->
         ?IMPLIES((length(Transition_List) < 20) and (length(Transition_List) > 0), begin
             New_State =
                 lists:foldl(fun(Action, _) ->
-                                case Action of
-                                    starting_service -> Args = ['foo', self()];
-                                    _ -> Args = ['foo']
+                                Args = case Action of
+                                    starting_service -> ['foo', self()];
+                                    _ -> ['foo']
                                 end,
                                 apply(uffda_client, Action, Args),
                                 uffda_client:service_status('foo')
@@ -186,6 +188,24 @@ proper_random_seq(_Config) ->
             end
         end)),
     true = proper:quickcheck(Rand_Seq, ?PQ_NUM(10)),
+    ok.
+
+-type valid_event() :: unregister_service | register_service| more_trans().
+proper_valid_events(_Config) ->
+    ct:log("Testing that any set of valid evens won't crash FSM"),
+    uffda_client:register_service(foo),
+    Valid_Events = 
+        ?FORALL(Event, valid_event(),
+                begin
+                    Result = case Event of
+                        starting_service ->
+                            uffda_client:starting_service(foo, self());
+                        _ ->
+                            uffda_client:Event(foo)
+                    end,
+                    (Result =:= ok) or (Result =:= {error, {not_registered, foo}}) 
+                end),
+    true = proper:quickcheck(Valid_Events, ?PQ_NUM(10)),
     ok.
 
 group_query_checks(_Config) ->
