@@ -8,25 +8,13 @@
          set_service_online/1,
          set_service_offline/1,
          service_status/1,
-%        which_service_pids/0,
-         which_service_names/0
+         which_services/0
         ]).
 
 -include("uffda.hrl").
 
-%<<<<<<< HEAD
-%-spec which_service_pids() -> [service_pid()].
-%which_service_pids() ->
-%    _FSM_Pids = uffda_registry_sup:which_children().
-%=======
-%
-%-spec which_services() -> [service_pid()].
-%which_services() ->
-%    uffda_registry_sup:which_services().
-%>>>>>>> jaynel-proper
-
--spec which_service_names() -> [service_name()].
-which_service_names() ->
+-spec which_services() -> [service_name()].
+which_services() ->
     FSM_Pids = uffda_registry_sup:which_services(),
     [gen_fsm:sync_send_all_state_event(Pid, get_service_name) || Pid <- FSM_Pids].
 

@@ -159,16 +159,16 @@ proper_state_sequence(_Config) ->
 
 name_checks(_Config) ->
     ct:log("Names expected are names returned."),
-    [] = uffda_client:which_service_names(),
+    [] = uffda_client:which_services(),
     ok = uffda_client:register_service(baz),
-    [baz] = uffda_client:which_service_names(),
+    [baz] = uffda_client:which_services(),
     ok = uffda_client:register_service(boop),
     true = ordsets:from_list([baz, boop]) == 
-           ordsets:from_list(uffda_client:which_service_names()),
+           ordsets:from_list(uffda_client:which_services()),
     ok = uffda_client:unregister_service(baz),
-    true = ordsets:from_list([boop]) == ordsets:from_list(uffda_client:which_service_names()),
+    true = ordsets:from_list([boop]) == ordsets:from_list(uffda_client:which_services()),
     ok = uffda_client:unregister_service(boop),
-    [] = uffda_client:which_service_names(),
+    [] = uffda_client:which_services(),
     ct:comment("A basic way to check names~n").
 
 balance_check([], _Reg, UnReg) ->
@@ -180,7 +180,7 @@ balance_check([H|T], Reg, UnReg) ->
              NewReg = ordsets:add_element(H, Reg),
              true = ordsets:is_element(H, NewReg),
              true = ordsets:is_subset(Reg, NewReg),
-             Registered_Actual = uffda_client:which_service_names(),
+             Registered_Actual = uffda_client:which_services(),
              case NewReg == ordsets:from_list(Registered_Actual) of
                 false -> [lists:sort(ordsets:to_list(NewReg)), lists:sort(Registered_Actual)],
                          false = true;
@@ -192,7 +192,7 @@ balance_check([H|T], Reg, UnReg) ->
              NewUnReg = lists:delete(Service, UnReg),
              NewReg = ordsets:del_element(Service, Reg),
              ok = uffda_client:unregister_service(Service),
-             Registered_Actual = uffda_client:which_service_names(),
+             Registered_Actual = uffda_client:which_services(),
              NewReg == ordsets:from_list(Registered_Actual),
              balance_check([H|T], NewReg, NewUnReg);
         2 -> balance_check([H|T], Reg, UnReg);
@@ -203,7 +203,7 @@ balance_check([H|T], Reg, UnReg) ->
 name_sanity(_Config) ->
     Names = ['','+¬b!Vd','õ\026','\037þ\020o×3]\d×','\210','=',
                      '-\235\b\bM','¾\036'],
-    Run = fun() -> [] = uffda_client:which_service_names(),
+    Run = fun() -> [] = uffda_client:which_services(),
                    true = balance_check(Names, ordsets:new(), [])
                    end,
     [Run() || _ <- lists:seq(1, 5)],
