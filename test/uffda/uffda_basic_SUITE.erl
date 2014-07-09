@@ -9,7 +9,9 @@
         proc/1,
         proper_sanity/1,
         group_query_checks/1,
-        proper_state_sequence/1
+        proper_state_sequence/1,
+        startup_timeout/1,
+        proper_random_seq/1
         ]).
 
 -export([
@@ -26,7 +28,9 @@ all() -> [
     crash,
     proper_sanity,
     group_query_checks,
-    proper_state_sequence
+    proper_state_sequence,
+    startup_timeout,
+    proper_random_seq
     ].
 
 init_per_suite(Config) -> Config.
@@ -150,6 +154,39 @@ proper_state_sequence(_Config) ->
            end
         end),
     true = proper:quickcheck(Up_Down_Seq, ?PQ_NUM(10)),
+    ok.
+
+-type more_trans() :: starting_service | transition().
+proper_random_seq(_Config) ->
+    ct:log("Testing more complex transition sequences."),
+    uffda_client:register('foo'),
+    uffda_client:starting_service('foo'),
+    Rand_Seq = ?FORALL(Transition_List, list(more_trans()),
+        ?IMPLIES(length(Transition_List) < 20, begin
+            [First | _] = Transition_List,
+            lists:foldl(fun(Action, _) -> apply(uffda_client, Action, 'foo') end, First, Transition_List),
+            New_State = uffda_client:service_status('foo'),
+            case lists:last(Transition_List) of
+                set_service_offline -> down =:= New_State;
+                set_service_online -> up =:= New_State;
+                starting_service -> (starting_up =:= New_State) or (restarting =:= New_State)
+            end
+        end)),
+    true = proper:quickcheck(Rand_Seq, ?PQ_NUM(10)),
+    ok.
+
+startup_timeout(_Config) ->
+    ct:log("STATE_STARTING_UP should timeout to DELAYED_START, and RESTARTING should
+           timeout to DELAYED_RESTART"),
+    uffda_client:register_service('foo'),
+    uffda_client:starting_service('foo'),
+    timer:sleep(1),
+    slow_start = uffda_client:service_status('foo'),
+    uffda_client:set_service_offline('foo'),
+    uffda_client:starting_service('foo'),
+    restarting = uffda_client:service_status('foo'),
+    timer:sleep(1),
+    slow_restart = uffda_client:service_status('foo'),
     ok.
 
 group_query_checks(_Config) ->
