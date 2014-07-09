@@ -1,5 +1,9 @@
 %% @doc
-%%   <img src="images/states.png">
+%%   The main modeling component of Uffda is the Service FSM which maintains
+%%   the current running status of a Service. It uses a state machine and
+%%   transitions as described in the following diagram:
+%%
+%%   <img src="images/states.png"/>
 %% @end
 -module(uffda_service_fsm).
 -behavior(gen_fsm).
@@ -106,10 +110,12 @@ fsm_name_from_service(Service_Name) ->
 %% Service is starting up
 -spec ?STATE_STARTING_UP (service_event(), state_data())
                          -> {next_state, fsm_state_name(), state_data()}.
+
+?STATE_STARTING_UP (Event, State_Data) -> starting_transition(Event, State_Data, ?STATE_STARTING_UP).
+
 -spec ?STATE_RESTARTING  (service_event(), state_data())
                          -> {next_state, fsm_state_name(), state_data()}.
 
-?STATE_STARTING_UP (Event, State_Data) -> starting_transition(Event, State_Data, ?STATE_STARTING_UP).
 ?STATE_RESTARTING  (Event, State_Data) -> starting_transition(Event, State_Data, ?STATE_RESTARTING).
 
 %% Multiple starting events is like a ping that provides more time to startup.
@@ -146,10 +152,12 @@ set_restarting_with_timeout(State_Data, Timeout) ->
 %% Service is is taking too long to start up
 -spec ?STATE_DELAYED_START   (service_event(), state_data())
                              -> {next_state, fsm_state_name(), state_data()}.
+
+?STATE_DELAYED_START   (Event, State_Data) -> delayed_transition(Event, State_Data, ?STATE_DELAYED_START).
+
 -spec ?STATE_DELAYED_RESTART (service_event(), state_data())
                              -> {next_state, fsm_state_name(), state_data()}.
 
-?STATE_DELAYED_START   (Event, State_Data) -> delayed_transition(Event, State_Data, ?STATE_DELAYED_START).
 ?STATE_DELAYED_RESTART (Event, State_Data) -> delayed_transition(Event, State_Data, ?STATE_DELAYED_RESTART).
 
 delayed_transition({starting, Service_Pid}, #state_data{name=Service_Name} = State_Data, ?STATE_DELAYED_START) ->
@@ -165,11 +173,12 @@ delayed_transition(Event,    State_Data,  Start_Or_Restart)      ->
 
 %% Service can toggle between restarting/up/down/crashed.
 -spec ?STATE_UP      (term(), state_data()) -> {next_state, fsm_state_name(), state_data()}.
--spec ?STATE_DOWN    (term(), state_data()) -> {next_state, fsm_state_name(), state_data()}.
--spec ?STATE_CRASHED (term(), state_data()) -> {next_state, fsm_state_name(), state_data()}.
-
 ?STATE_UP      (Event, State_Data) -> up_down_transition(Event, State_Data, ?STATE_UP).
+
+-spec ?STATE_DOWN    (term(), state_data()) -> {next_state, fsm_state_name(), state_data()}.
 ?STATE_DOWN    (Event, State_Data) -> up_down_transition(Event, State_Data, ?STATE_DOWN).
+
+-spec ?STATE_CRASHED (term(), state_data()) -> {next_state, fsm_state_name(), state_data()}.
 ?STATE_CRASHED (Event, State_Data) -> up_down_transition(Event, State_Data, ?STATE_CRASHED).
 
 up_down_transition({starting, Service_Pid}, #state_data{name=Service_Name} = State_Data, _Current_State) ->
