@@ -1,8 +1,10 @@
 .eunit
 deps
+doc/images
 ebin
 log
 logs
+tags
 rel
 *.beam
 *.o

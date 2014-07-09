@@ -1,0 +1,26 @@
+digraph G {
+    registered -> starting_up [label = starting];
+    starting_up -> delayed_start_up [style = dotted ,label= "TIMEOUT"];
+    starting_up -> up [label = online];
+    delayed_start_up -> up [label = online];
+
+    starting_up -> down [style = dotted, label = "DOWN/normal"];
+    delayed_start_up -> down [style = dotted, label = "DOWN/normal"];
+
+    starting_up -> crashed [style = dotted, label = "DOWN/abnormal"];
+    delayed_start_up -> crashed [style = dotted, label = "DOWN/abnormal"];
+
+    up -> up [label = "online"];
+    down -> down [label = "offline"];
+    down -> down [style = dotted, label = "DOWN/normal"];
+    crashed -> crashed [style=dotted, label = "DOWN/abnormal"];
+
+    up -> restarting [label = "re_init"];
+    down -> restarting [label = "re_init"];
+    crashed -> restarting [label = "re_init"];
+    starting_up -> restarting [label = "re_init"];
+
+    restarting -> up [label = "online"];
+    restarting -> down [label = "offline"];
+    restarting -> crashed [style = dotted, label = "DOWN/abnormal"];
+    }

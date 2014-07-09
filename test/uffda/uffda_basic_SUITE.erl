@@ -6,11 +6,14 @@
 -export([
         easy/1,
         crash/1,
+        balance_check/3,
+        name_checks/1,
+        name_sanity/1,
         proc/1,
+        proper_name_checks/1,
         proper_sanity/1,
         group_query_checks/1,
         proper_state_sequence/1,
-        startup_timeout/1,
         proper_random_seq/1
         ]).
 
@@ -26,11 +29,13 @@ all() -> [
     easy,
     proc,
     crash,
+    name_checks,
+    name_sanity,
     proper_sanity,
     group_query_checks,
     proper_state_sequence,
-    startup_timeout,
-    proper_random_seq
+    proper_random_seq,
+    proper_name_checks
     ].
 
 init_per_suite(Config) -> Config.
@@ -62,6 +67,7 @@ create_service(Name) -> spawn(?MODULE, startup, [Name, self()]).
 startup(Name, Caller) ->
     uffda_client:register_service(Name),
     Caller ! {ok, Name},
+    uffda_client:starting_service(Name, self()),
     service_loop(Name).
 
 -spec service_loop(atom()) -> term().
@@ -70,7 +76,6 @@ service_loop(Name) ->
         die   -> exit(kill);
         up    -> uffda_client:set_service_online(Name);
         down  -> uffda_client:set_service_offline(Name);
-        reset -> uffda_client:reset_service(Name);
         {state, Pid} -> Pid ! uffda_client:service_status(Name)
     end,
     service_loop(Name).
@@ -90,7 +95,7 @@ proc(_Config) ->
     Foo = create_service(foo),
     ok = expect_msg({ok, foo}),
     Foo ! {state, self()},
-    ok = expect_msg(registered),
+    ok = expect_msg(starting_up),
     Foo ! up,
     Foo ! {state, self()},
     ok = expect_msg(up),
@@ -106,8 +111,8 @@ crash(_Config) ->
     Foo = create_service(foo),
     ok = expect_msg({ok, foo}),
     Foo ! {state, self()},
-    ok = expect_msg(registered),
-    registered = uffda_client:service_status(foo),
+    ok = expect_msg(starting_up),
+    starting_up = uffda_client:service_status(foo),
     Foo ! die,
     erlang:yield(),
     false = is_process_alive(Foo),
@@ -125,7 +130,7 @@ crash(_Config) ->
     ok.
 
 proper_sanity(_Config) ->
-    ct:log("A new fsm is always in the 'STARTING_UP' state."),
+    ct:log("A new fsm always has starting_up status."),
     ok = uffda_client:register_service('0'),
     registered = uffda_client:service_status('0'),
     Test_Down_Init =
@@ -141,7 +146,7 @@ proper_sanity(_Config) ->
 proper_state_sequence(_Config) ->
     ct:log("Testing states do not get confuddled given a random transition sequence."),
     uffda_client:register_service('foo'),
-    uffda_client:starting_service('foo'),
+    uffda_client:starting_service('foo', self()),
     uffda_client:set_service_online('foo'), 
     Up_Down_Seq =
         ?FORALL([T1, T2], [transition(), transition()], begin
@@ -159,13 +164,21 @@ proper_state_sequence(_Config) ->
 -type more_trans() :: starting_service | transition().
 proper_random_seq(_Config) ->
     ct:log("Testing more complex transition sequences."),
-    uffda_client:register('foo'),
-    uffda_client:starting_service('foo'),
+    uffda_client:register_service('foo'),
+    uffda_client:starting_service('foo', self()),
+    uffda_client:set_service_online('foo'),
     Rand_Seq = ?FORALL(Transition_List, list(more_trans()),
-        ?IMPLIES(length(Transition_List) < 20, begin
-            [First | _] = Transition_List,
-            lists:foldl(fun(Action, _) -> apply(uffda_client, Action, 'foo') end, First, Transition_List),
-            New_State = uffda_client:service_status('foo'),
+        ?IMPLIES((length(Transition_List) < 20) and (length(Transition_List) > 0), begin
+            New_State =
+                lists:foldl(fun(Action, _) ->
+                                case Action of
+                                    starting_service -> Args = ['foo', self()];
+                                    _ -> Args = ['foo']
+                                end,
+                                apply(uffda_client, Action, Args),
+                                uffda_client:service_status('foo')
+                            end,
+                            uffda_client:service_status('foo'), Transition_List),
             case lists:last(Transition_List) of
                 set_service_offline -> down =:= New_State;
                 set_service_online -> up =:= New_State;
@@ -175,27 +188,79 @@ proper_random_seq(_Config) ->
     true = proper:quickcheck(Rand_Seq, ?PQ_NUM(10)),
     ok.
 
-startup_timeout(_Config) ->
-    ct:log("STATE_STARTING_UP should timeout to DELAYED_START, and RESTARTING should
-           timeout to DELAYED_RESTART"),
-    uffda_client:register_service('foo'),
-    uffda_client:starting_service('foo'),
-    timer:sleep(1),
-    slow_start = uffda_client:service_status('foo'),
-    uffda_client:set_service_offline('foo'),
-    uffda_client:starting_service('foo'),
-    restarting = uffda_client:service_status('foo'),
-    timer:sleep(1),
-    slow_restart = uffda_client:service_status('foo'),
-    ok.
-
 group_query_checks(_Config) ->
     ct:log("Checking that queries run properly."),
-    [] = uffda_client:which_services(),
+    [] = uffda_client:which_service_pids(),
     ok = uffda_client:register_service(baz),
-    [Content] = uffda_client:which_services(),
+    [Content] = uffda_client:which_service_pids(),
     ok = uffda_client:register_service(boop),
-    [_, _] = uffda_client:which_services(),
-    true = lists:member(Content, uffda_client:which_services()),
+    [_, _] = uffda_client:which_service_pids(),
+    true = lists:member(Content, uffda_client:which_service_pids()),
     ok = uffda_client:unregister_service(boop),
-    [Content] = uffda_client:which_services().
+    [Content] = uffda_client:which_service_pids().
+
+name_checks(_Config) ->
+    ct:log("Names expected are names returned."),
+    [] = uffda_client:which_service_names(),
+    ok = uffda_client:register_service(baz),
+    [baz] = uffda_client:which_service_names(),
+    ok = uffda_client:register_service(boop),
+    true = ordsets:from_list([baz, boop]) == 
+           ordsets:from_list(uffda_client:which_service_names()),
+    ok = uffda_client:unregister_service(baz),
+    true = ordsets:from_list([boop]) == ordsets:from_list(uffda_client:which_service_names()),
+    ok = uffda_client:unregister_service(boop),
+    [] = uffda_client:which_service_names(),
+    ct:comment("A basic way to check names~n").
+
+balance_check([], _Reg, UnReg) ->
+    [ok = uffda_client:unregister_service(Un) || Un <- UnReg],
+    true;
+balance_check([H|T], Reg, UnReg) ->
+    case random:uniform(3) of
+        1 -> ok = uffda_client:register_service(H),
+             NewReg = ordsets:add_element(H, Reg),
+             true = ordsets:is_element(H, NewReg),
+             true = ordsets:is_subset(Reg, NewReg),
+             Registered_Actual = uffda_client:which_service_names(),
+             case NewReg == ordsets:from_list(Registered_Actual) of
+                false -> [lists:sort(ordsets:to_list(NewReg)), lists:sort(Registered_Actual)],
+                         false = true;
+                _ -> true
+             end,
+             balance_check(T, NewReg, [H | UnReg]);
+        2 when UnReg /= [] -> Index = random:uniform(length(UnReg)),
+             Service = lists:nth(Index, UnReg),
+             NewUnReg = lists:delete(Service, UnReg),
+             NewReg = ordsets:del_element(Service, Reg),
+             ok = uffda_client:unregister_service(Service),
+             Registered_Actual = uffda_client:which_service_names(),
+             NewReg == ordsets:from_list(Registered_Actual),
+             balance_check([H|T], NewReg, NewUnReg);
+        2 -> balance_check([H|T], Reg, UnReg);
+        3 -> ct:sleep(10), 
+             balance_check([H|T], Reg, UnReg)
+    end.
+
+name_sanity(_Config) ->
+    Names = ['','+¬b!Vd','õ\026','\037þ\020o×3]\d×','\210','=',
+                     '-\235\b\bM','¾\036'],
+    Run = fun() -> [] = uffda_client:which_service_names(),
+                   true = balance_check(Names, ordsets:new(), [])
+                   end,
+    [Run() || _ <- lists:seq(1, 5)],
+    ct:comment("A basic check that state is properly cleaned up.").
+
+proper_name_checks(_Config) ->
+    ct:log("Registered services are the expected ones."),
+    NCs = ?FORALL(NameList, list(atom()), 
+            ?IMPLIES((10 < length(NameList)) and (length(NameList) < 200),
+                      begin
+                          UniqueNameList = ordsets:to_list(ordsets:from_list(NameList)),
+                          true = balance_check(UniqueNameList, ordsets:new(), [])
+                      end)),
+    true = case proper:quickcheck(NCs, ?PQ_NUM(3)) of
+        true -> true;
+        false -> ct:log("Counterexamples: ~p~n", [proper:counterexamples()]), false
+    end,
+    ct:comment("Tested that registering maintains the available names properly.").

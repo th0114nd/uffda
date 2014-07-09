@@ -21,10 +21,17 @@ run: all
 relxrun: release
 	rel/uffda/uffda/bin/uffda console
 
+images: doc
+	mkdir -p doc/images
+	dot -Tpng doc/states.dot -o doc/images/states.png
+
 release: clean-release all
 	relx -o rel/$(PROJECT)
 
 clean-release: clean-all
 	rm -rf rel/$(PROJECT)
+
+tags: all
+	/opt/local/bin/ctags --file-scope=no -R --languages=erlang .
 
 include erlang.mk
