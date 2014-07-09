@@ -3,6 +3,12 @@
 -type service_fsm()     :: atom().
 -type service_fsm_pid() :: pid().
 
+-record(service_options, {
+    stimeout :: integer()
+    }).
+
+-type service_options() :: #service_options{}.
+
 -type service_event()   :: unregister
                          | {starting, service_pid()}
                          | {re_init,  service_pid()}
@@ -20,3 +26,4 @@
                          | down
                          | up.
 
+-define(MAX_STARTUP_TIME, 300).

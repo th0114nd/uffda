@@ -128,7 +128,7 @@ crash(_Config) ->
     ok.
 
 proper_sanity(_Config) ->
-    ct:log("A new fsm always has starting_up status."),
+    ct:log("A new fsm always has registered status."),
     ok = uffda_client:register_service('0'),
     registered = uffda_client:service_status('0'),
     Test_Down_Init =

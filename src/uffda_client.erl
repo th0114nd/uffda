@@ -40,6 +40,7 @@
          register_service/1,
          register_service/2,
          unregister_service/1,
+         starting_service/1,
          starting_service/2,
          set_service_online/1,
          set_service_offline/1,
@@ -48,6 +49,9 @@
         ]).
 
 -include("uffda.hrl").
+
+-spec default_options() -> #service_options{}.
+default_options() -> #service_options{stimeout = ?MAX_STARTUP_TIME}.
 
 %% Register reserves a service name for future monitoring.
 -spec register_service(service_name()) -> ok.
@@ -60,8 +64,7 @@
 %% @end
 register_service(Service_Name)
   when is_atom(Service_Name) ->
-    _ = uffda_registry_sup:start_child(Service_Name),
-    ok.
+    register_service(Service_Name, undefined, default_options()).
 
 -spec register_service(service_name(), service_pid()) -> ok.
 %% @doc
@@ -73,7 +76,15 @@ register_service(Service_Name)
 %% @end
 register_service(Service_Name, Service_Pid)
   when is_atom(Service_Name), is_pid(Service_Pid) ->
-    case uffda_registry_sup:start_child(Service_Name, Service_Pid) of
+    register_service(Service_Name, Service_Pid, default_options()).
+
+register_service(Service_Name, undefined, Options)
+  when is_atom(Service_Name), is_record(Options, service_options) ->
+    _ = uffda_registry_sup:start_child(Service_Name, undefined, Options),
+    ok;
+register_service(Service_Name, Service_Pid, Options)
+  when is_atom(Service_Name), is_pid(Service_Pid) or Service_Pid == undefined, is_record(Options, service_options)  ->
+    case uffda_registry_sup:start_child(Service_Name, Service_Pid, Options) of
         {ok, _Fsm_Pid} -> ok;
         {error, {already_started, Fsm_Pid}} ->
             trigger_all_event(Fsm_Pid, {re_init, Service_Pid})
@@ -125,6 +136,14 @@ which_service_fsms() ->
 %% Service events cause the Service FSM to change the service status.
 -type event_response()  :: {error, {not_registered, service_name()}} | ok.
 -type status_response() :: {error, {not_registered, service_name()}} | service_status().
+
+
+-spec starting_service(service_name()) -> event_response().
+%% @doc
+%% starting_service/2 with self as the second argument.
+%% @end
+starting_service(Service_Name) -> starting_service(Service_Name, self()).
+
 
 -spec starting_service(service_name(), service_pid()) -> event_response().
 %% @doc

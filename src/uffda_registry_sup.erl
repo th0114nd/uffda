@@ -4,8 +4,7 @@
 -export([
          start_link/0,
          init/1,
-         start_child/1,
-         start_child/2,
+         start_child/3,
          stop_child/1,
          which_services/0
         ]).
@@ -29,26 +28,17 @@
 start_link() ->
     supervisor:start_link({local, ?SERVER}, ?MODULE, {}).
 
--spec start_child(service_name())
-                 -> {ok, service_fsm_pid()}
-                        | {error, {already_started, service_fsm_pid()}}.
-%% @doc
-%%   Create a new {@link uffda_service_fsm} process for the caller's process.
-%% @end
-start_child(Service_Name) 
-  when is_atom(Service_Name) ->
-    supervisor:start_child(?MODULE, [Service_Name]).
 
--spec start_child(service_name(), service_pid())
+-spec start_child(service_name(), service_pid() | undefined, service_options())
                  -> {ok, service_fsm_pid()}
                         | {error, {already_started, service_fsm_pid()}}.
 %% @doc
-%%   Create a new {@link uffda_service_fsm} process for another process
-%%   (not the caller's process).
+%%   Create a new {@link uffda_service_fsm} process for the Pid specified by
+%%   Service pid, or waits for a pid if it is 'undefined'.
 %% @end
-start_child(Service_Name, Service_Pid) 
-  when is_atom(Service_Name), is_pid(Service_Pid) ->
-    supervisor:start_child(?MODULE, [Service_Name, Service_Pid]).
+start_child(Service_Name, Service_Pid, Options)
+  when is_atom(Service_Name), (is_pid(Service_Pid) or (Service_Pid == undefined)), is_record(Options, service_options)  ->
+    supervisor:start_child(?MODULE, [Service_Name, Service_Pid, Options]).
 
 -spec stop_child(service_fsm_pid()) -> ok | {error, any()}.
 %% @doc
@@ -77,6 +67,6 @@ which_services() ->
 %%   Initialize the supervisor to manage simple_one_for_one
 %%   {@link uffda_service_fsm} transient workers.
 %% @end
-init({}) -> 
+init({}) ->
     Fsm_Spec = ?CHILD(uffda_service_fsm, []),
     {ok, {{simple_one_for_one, 5, 60}, [Fsm_Spec]}}.
