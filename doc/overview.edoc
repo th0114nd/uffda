@@ -26,8 +26,10 @@ This is the source for Uffda's overview page.
 @title Uffda: Service registry
 
 @doc Uffda ([http://en.wikipedia.org/wiki/Uffda]) is a Scandanavian-American term of dismay.
-The Uffda Service Registry can be consulted to determine the current status of a
-user-provided service. The {@link uffda_client} module provides a list of the
+The Uffda Service Registry allows other applications or services to register
+a service name. The service name is associated with a process id and
+the registry then monitors that process to report the current status of the
+local service. The {@link uffda_client} module provides a list of the
 valid service states.
 
 The following modules are included in Uffda:
@@ -39,8 +41,6 @@ The following modules are included in Uffda:
 <dd>The Client API used by other applications to interact with the Uffda Service Registry</dd>
 <dt>{@link uffda_registry_sup}</dt>
 <dd>Root supervisor of the Uffda Service Registry</dd>
-<dt>{@link uffda_service}</dt>
-<dd>An Uffda Service behaviour for user-provided services to be monitored properly</dd>
 <dt>{@link uffda_service_fsm}</dt>
 <dd>The FSM used to monitor the state of a single user-provided service</dd>
 </dl>

@@ -80,7 +80,7 @@ start_link(Service_Name, Service_Pid) ->
     gen_fsm:start_link({local, Service_Fsm}, ?MODULE, {Service_Name, Service_Pid}, []).
 
 fsm_name_from_service(Service_Name) ->
-    atom_to_list(Service_Name) ++ "_service_fsm".
+    atom_to_list(Service_Name) ++ "_uffda_service_fsm".
 
 
 %%----------------------------------------------------
@@ -224,8 +224,11 @@ handle_sync_event({re_init, Service_Pid}, _From, State_Name, #state_data{name=Na
 %% Request to get the current status...
 handle_sync_event(current_status, _From, State_Name, State_Data) ->
     {reply, status(State_Name), State_Name, State_Data};
+
+%% Request for a service name...
 handle_sync_event(get_service_name, _From, State_Name, #state_data{name=Name} = State_Data) ->
     {reply, Name, State_Name, State_Data};
+
 %% Some unknown request.
 handle_sync_event(Event, _From, State_Name, State_Data) ->
     log_unexpected_msg(handle_sync_event, event, Event, State_Data),
