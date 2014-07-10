@@ -1,6 +1,6 @@
 %% @doc
-%%   The registry suite is a test of the ability of uffda to record the set
-%%   of registered services. We use property-based testing to verify that
+%%   The registry suite tests the ability of uffda to record the set of
+%%   registered services. We use property-based testing to verify that
 %%   the registry functions as expected. Interaction with the uffda registry
 %%   may only be made via exported {@link uffda_client} and
 %%   {@link uffda_registry_sup} functions, or by starting and stopping the
@@ -32,7 +32,7 @@
 
 -include("uffda_common_test.hrl").
 
--spec all() -> [module()].
+-spec all() -> [atom()].
 %% @doc
 %%   All testcases that are run.
 %% @end
