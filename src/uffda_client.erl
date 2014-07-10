@@ -50,8 +50,8 @@
 
 -include("uffda.hrl").
 
--spec default_options() -> #service_options{}.
-default_options() -> #service_options{stimeout = ?MAX_STARTUP_TIME}.
+-spec default_options_plist() -> [{atom(), term()}].
+default_options_plist() -> [{stimeout, ?MAX_STARTUP_TIME}].
 
 %% Register reserves a service name for future monitoring.
 -spec register_service(service_name()) -> ok.
@@ -64,10 +64,9 @@ default_options() -> #service_options{stimeout = ?MAX_STARTUP_TIME}.
 %% @end
 register_service(Service_Name)
   when is_atom(Service_Name) ->
-    ct:log("Reg 1"),
-    register_service(Service_Name, undefined, default_options()).
+    register_service(Service_Name, default_options_plist()).
 
--spec register_service(service_name(), service_pid()) -> ok.
+-spec register_service(service_name(), [{stimeout, integer()}, ...]) -> ok | {error, already_started}.
 %% @doc
 %%    Reserve a service name (see {@link register_service/1}) provide
 %%    an already running pid as the service process to monitor.
@@ -75,21 +74,13 @@ register_service(Service_Name)
 %%    If one already exists it is reported as the new registered
 %%    service FSM.
 %% @end
-register_service(Service_Name, Service_Pid)
-  when is_atom(Service_Name), is_pid(Service_Pid) ->
-    register_service(Service_Name, Service_Pid, default_options()).
 
-register_service(Service_Name, undefined, Options)
-  when is_atom(Service_Name), is_record(Options, service_options) ->
-    ct:log("Reg 3"),
-    _ = uffda_registry_sup:start_child(Service_Name, undefined, Options),
-    ok;
-register_service(Service_Name, Service_Pid, Options)
-  when is_atom(Service_Name), is_pid(Service_Pid) or Service_Pid == undefined, is_record(Options, service_options)  ->
-    case uffda_registry_sup:start_child(Service_Name, Service_Pid, Options) of
+register_service(Service_Name, Options)
+  when is_atom(Service_Name) ->
+    [{stimeout, Timeout}] = Options,
+    case uffda_registry_sup:start_child(Service_Name, undefined, #service_options{stimeout = Timeout}) of
         {ok, _Fsm_Pid} -> ok;
-        {error, {already_started, Fsm_Pid}} ->
-            trigger_all_event(Fsm_Pid, {re_init, Service_Pid})
+        {error, {already_started, _Fsm_Pid}} -> {error, already_started}
     end.
 
 -spec unregister_service(service_name()) -> ok | {error, term()}.

@@ -38,7 +38,6 @@ start_link() ->
 %% @end
 start_child(Service_Name, Service_Pid, Options)
   when is_atom(Service_Name), (is_pid(Service_Pid) or (Service_Pid == undefined)), is_record(Options, service_options)  ->
-    ct:log("Start_child 3"),
     supervisor:start_child(?MODULE, [Service_Name, Service_Pid, Options]).
 
 -spec stop_child(service_fsm_pid()) -> ok | {error, any()}.

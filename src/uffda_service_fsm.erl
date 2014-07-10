@@ -90,7 +90,6 @@ existing_fsm_name_from_service(Service_Name) ->
 %% @end
 start_link(Service_Name, Service_Pid, Options) 
   when is_atom(Service_Name), is_pid(Service_Pid) or (Service_Pid == undefined), is_record(Options, service_options) ->
-    ct:log("Start_link 3"),
     Service_Fsm = list_to_atom(fsm_name_from_service(Service_Name)),
     gen_fsm:start_link({local, Service_Fsm}, ?MODULE, {Service_Name, Service_Pid, Options}, []).
 
@@ -224,14 +223,13 @@ up_down_transition(Event,    State_Data,  Current_State) ->
 %% gen_fsm API callbacks 
 %%---------------------------------------------------
 
--spec init({service_name()} | {service_name(), service_pid()}) -> {ok, fsm_state_name(), state_data()}.
+-spec init({service_name(), service_pid() | undefined, service_options()}) -> {ok, fsm_state_name(), state_data()}.
 %% @hidden
 %% @doc
 %%   Initialize the state machine to begin in the 'REGISTERED' state.
 %% @end
 init({Service_Name, undefined, #service_options{stimeout = TimeOut} = Options})
   when is_record(Options, service_options) ->
-    ct:log("init/1"),
     {ok, ?STATE_REGISTERED, #state_data{name=Service_Name, stimeout = TimeOut}};
 init({Service_Name, Service_Pid, #service_options{stimeout = Timeout} = Options})
   when is_record(Options, service_options) ->
