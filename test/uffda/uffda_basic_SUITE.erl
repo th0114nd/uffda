@@ -276,6 +276,7 @@ proper_valid_events(_Config) ->
     uffda_client:register_service(foo),
     Valid_Events = 
         ?FORALL(Event, valid_event(),
+            ?WHENFAIL(ct:log("~p", Event), 
                 begin
                     Result = case Event of
                         starting_service ->
@@ -284,7 +285,7 @@ proper_valid_events(_Config) ->
                             uffda_client:Event(foo)
                     end,
                     (Result =:= ok) or (Result =:= {error, {not_registered, foo}}) or (Result =:= {error, already_started}) 
-                end),
+                end)),
     true = proper:quickcheck(Valid_Events, ?PQ_NUM(10)),
     ok.
 
