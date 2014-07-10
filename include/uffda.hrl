@@ -3,8 +3,10 @@
 -type service_fsm()     :: atom().
 -type service_fsm_pid() :: pid().
 
+-type register_option() :: {max_startup_millis, non_neg_integer()}.
+
 -record(service_options, {
-    stimeout :: integer()
+    max_startup_millis :: non_neg_integer()
     }).
 
 -type service_options() :: #service_options{}.

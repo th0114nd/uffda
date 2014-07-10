@@ -29,7 +29,7 @@ start_link() ->
     supervisor:start_link({local, ?SERVER}, ?MODULE, {}).
 
 
--spec start_child(service_name(), service_pid() | undefined, service_options())
+-spec start_child(service_name(), service_pid() | undefined, proplists:proplist())
                  -> {ok, service_fsm_pid()}
                         | {error, {already_started, service_fsm_pid()}}.
 %% @doc
@@ -37,7 +37,7 @@ start_link() ->
 %%   Service pid, or waits for a pid if it is 'undefined'.
 %% @end
 start_child(Service_Name, Service_Pid, Options)
-  when is_atom(Service_Name), (is_pid(Service_Pid) or (Service_Pid == undefined)), is_record(Options, service_options)  ->
+  when is_atom(Service_Name), (is_pid(Service_Pid) or (Service_Pid == undefined)), is_list(Options)  ->
     supervisor:start_child(?MODULE, [Service_Name, Service_Pid, Options]).
 
 -spec stop_child(service_fsm_pid()) -> ok | {error, any()}.

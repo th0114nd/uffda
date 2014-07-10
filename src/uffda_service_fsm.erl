@@ -56,7 +56,7 @@
           name        :: service_name(),
           pid         :: service_pid(),
           monitor_ref :: reference(),
-          stimeout    :: integer()
+          max_startup_time    :: non_neg_integer()
          }).
 
 -type state_data()     :: #state_data{}.
@@ -78,7 +78,7 @@ existing_fsm_name_from_service(Service_Name) ->
     catch error:badarg -> {error, {not_registered, Service_Name}}
     end.
 
--spec start_link(service_name(), service_pid() | undefined, service_options()) -> {ok, service_fsm_pid()}.
+-spec start_link(service_name(), service_pid() | undefined, proplists:proplist()) -> {ok, service_fsm_pid()}.
 %% @doc
 %%   Create a new registered service FSM and immediately associate it with
 %%   an existing pid (by monitoring the passed in service_pid()) or return
@@ -89,7 +89,7 @@ existing_fsm_name_from_service(Service_Name) ->
 %%   or slow_restart state until another event is provided.
 %% @end
 start_link(Service_Name, Service_Pid, Options) 
-  when is_atom(Service_Name), is_pid(Service_Pid) or (Service_Pid == undefined), is_record(Options, service_options) ->
+  when is_atom(Service_Name), is_pid(Service_Pid) or (Service_Pid == undefined), is_list(Options) ->
     Service_Fsm = list_to_atom(fsm_name_from_service(Service_Name)),
     gen_fsm:start_link({local, Service_Fsm}, ?MODULE, {Service_Name, Service_Pid, Options}, []).
 
@@ -153,10 +153,10 @@ starting_transition(Event,    State_Data, ?STATE_RESTARTING) ->
     log_unexpected_msg(?STATE_RESTARTING,  event, Event, State_Data),
     set_restarting_with_timeout(State_Data).
 
-set_starting_up_with_timeout(#state_data{stimeout = Timeout} = State_Data) ->
+set_starting_up_with_timeout(#state_data{max_startup_time = Timeout} = State_Data) ->
     {next_state, ?STATE_STARTING_UP, State_Data, Timeout}.
 
-set_restarting_with_timeout(#state_data{stimeout = Timeout} = State_Data) ->
+set_restarting_with_timeout(#state_data{max_startup_time = Timeout} = State_Data) ->
     {next_state, ?STATE_RESTARTING, State_Data, Timeout}.
 
 %% Service is is taking too long to start up
@@ -223,17 +223,19 @@ up_down_transition(Event,    State_Data,  Current_State) ->
 %% gen_fsm API callbacks 
 %%---------------------------------------------------
 
--spec init({service_name(), service_pid() | undefined, service_options()}) -> {ok, fsm_state_name(), state_data()}.
+-spec init({service_name(), service_pid() | undefined, proplists:proplist()}) -> {ok, fsm_state_name(), state_data()}.
 %% @hidden
 %% @doc
 %%   Initialize the state machine to begin in the 'REGISTERED' state.
 %% @end
-init({Service_Name, undefined, #service_options{stimeout = TimeOut} = Options})
-  when is_record(Options, service_options) ->
-    {ok, ?STATE_REGISTERED, #state_data{name=Service_Name, stimeout = TimeOut}};
-init({Service_Name, Service_Pid, #service_options{stimeout = Timeout} = Options})
-  when is_record(Options, service_options) ->
-    {ok, ?STATE_REGISTERED, reinitialize(Service_Name, Service_Pid, #state_data{stimeout=Timeout})}.
+init({Service_Name, undefined, Options})
+  when is_list(Options) ->
+    Timeout = proplists:get_value(max_startup_millis, Options, ?MAX_STARTUP_TIME),
+    {ok, ?STATE_REGISTERED, #state_data{name=Service_Name, max_startup_time=Timeout}};
+init({Service_Name, Service_Pid, Options})
+  when is_list(Options) ->
+    Timeout = proplists:get_value(max_startup_millis, Options, ?MAX_STARTUP_TIME),
+    {ok, ?STATE_REGISTERED, reinitialize(Service_Name, Service_Pid, #state_data{max_startup_time=Timeout})}.
 
 -spec reinitialize(service_name(), service_pid(), State1::state_data()) -> State2::state_data().
 %% @hidden
@@ -274,12 +276,12 @@ handle_event(Event, State_Name, State_Data) ->
 %%     <li>get_service_name: returns the name of the service</li>
 %%   </ul>
 %% @end
-handle_sync_event({re_init, Service_Pid}, _From, State_Name, #state_data{pid=Service_Pid, stimeout = Timeout} = State_Data)
+handle_sync_event({re_init, Service_Pid}, _From, State_Name, #state_data{pid=Service_Pid, max_startup_time = Timeout} = State_Data)
   when State_Name =/= ?STATE_REGISTERED ->
     {reply, ok, ?STATE_RESTARTING, State_Data, Timeout};
 
 %% Re-init with a new process to monitor...
-handle_sync_event({re_init, Service_Pid}, _From, State_Name, #state_data{name=Name, stimeout = Timeout} = State_Data)
+handle_sync_event({re_init, Service_Pid}, _From, State_Name, #state_data{name=Name, max_startup_time = Timeout} = State_Data)
   when State_Name =/= ?STATE_REGISTERED ->
     New_State_Data = reinitialize(Name, Service_Pid, State_Data),
     {reply, ok, ?STATE_RESTARTING, New_State_Data, Timeout};

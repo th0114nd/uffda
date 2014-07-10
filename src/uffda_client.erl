@@ -50,8 +50,8 @@
 
 -include("uffda.hrl").
 
--spec default_options_plist() -> [{atom(), term()}].
-default_options_plist() -> [{stimeout, ?MAX_STARTUP_TIME}].
+-spec default_options_plist() -> [register_option()].
+default_options_plist() -> [].
 
 %% Register reserves a service name for future monitoring.
 -spec register_service(service_name()) -> ok.
@@ -66,7 +66,7 @@ register_service(Service_Name)
   when is_atom(Service_Name) ->
     register_service(Service_Name, default_options_plist()).
 
--spec register_service(service_name(), [{stimeout, integer()}, ...]) -> ok | {error, already_started}.
+-spec register_service(service_name(), [register_option()]) -> ok | {error, already_started}.
 %% @doc
 %%    Reserve a service name (see {@link register_service/1}) provide
 %%    an already running pid as the service process to monitor.
@@ -77,8 +77,7 @@ register_service(Service_Name)
 
 register_service(Service_Name, Options)
   when is_atom(Service_Name) ->
-    [{stimeout, Timeout}] = Options,
-    case uffda_registry_sup:start_child(Service_Name, undefined, #service_options{stimeout = Timeout}) of
+    case uffda_registry_sup:start_child(Service_Name, undefined, Options) of
         {ok, _Fsm_Pid} -> ok;
         {error, {already_started, _Fsm_Pid}} -> {error, already_started}
     end.
