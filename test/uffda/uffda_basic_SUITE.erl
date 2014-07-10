@@ -26,7 +26,9 @@
          proper_name_checks/1,
          proper_sanity/1,
          proper_state_sequence/1,
-         proper_random_seq/1
+         proper_random_seq/1,
+         proper_valid_events/1,
+         proper_timeout_test/1
         ]).
 
 -export([
@@ -50,7 +52,9 @@ all() -> [
     proper_sanity,
     proper_state_sequence,
     proper_random_seq,
-    proper_name_checks
+    proper_valid_events,
+    proper_name_checks,
+    proper_timeout_test
     ].
 
 -type config() :: proplists:proplist().
@@ -266,6 +270,25 @@ proper_random_seq(_Config) ->
     true = proper:quickcheck(Rand_Seq, ?PQ_NUM(10)),
     ok.
 
+-type valid_event() :: unregister_service | register_service| more_trans().
+proper_valid_events(_Config) ->
+    ct:log("Testing that any set of valid evens won't crash FSM"),
+    uffda_client:register_service(foo),
+    Valid_Events = 
+        ?FORALL(Event, valid_event(),
+            ?WHENFAIL(ct:log("~p", Event), 
+                begin
+                    Result = case Event of
+                        starting_service ->
+                            uffda_client:starting_service(foo, self());
+                        _ ->
+                            uffda_client:Event(foo)
+                    end,
+                    (Result =:= ok) or (Result =:= {error, {not_registered, foo}}) or (Result =:= {error, already_started}) 
+                end)),
+    true = proper:quickcheck(Valid_Events, ?PQ_NUM(10)),
+    ok.
+
 -spec name_checks(term()) -> ok.
 %% @doc
 %%   Register/unregister produces a valid set.
@@ -339,3 +362,24 @@ proper_name_checks(_Config) ->
                   end))),
     true = proper:quickcheck(NCs, ?PQ_NUM(3)),
     ct:comment("Tested that registering maintains the available names properly.").
+
+proper_timeout_test(_Config) ->
+    ct:log("Verifies starting up won't last forever."),
+    Timeout =
+        ?FORALL(Time, pos_integer(),
+                ?IMPLIES((Time < 50) and (Time > 15),
+                         begin
+                             create_sleepy_service(foo, Time),
+                             Result = slow_start =:= uffda_client:service_status(foo),
+                             uffda_client:unregister_service(foo),
+                             Result
+                         end)),
+    true = proper:quickcheck(Timeout, ?PQ_NUM(10)),
+    ok.
+
+create_sleepy_service(Name, Time) ->
+    uffda_client:register_service(Name, [{stimeout, 14}]),
+    uffda_client:starting_service(Name, self()),
+    ct:sleep(Time),
+    ok.
+ 

@@ -53,14 +53,13 @@
 -spec default_options_plist() -> [register_option()].
 default_options_plist() -> [].
 
-%% Register reserves a service name for future monitoring.
 -spec register_service(service_name()) -> ok.
 %% @doc
-%%    Reserve a service name for future monitoring.
-%%    This is accomplished internally by asking the registry
-%%    supervisor to add a new {@link uffda_service_fsm} worker.
-%%    If one already exists it is reported as the new registered
-%%    service FSM.
+%%   Reserve a service name for future monitoring.
+%%   This is accomplished internally by asking the registry
+%%   supervisor to add a new {@link uffda_service_fsm} worker.
+%%   If one already exists it is reported as the new registered
+%%   service FSM.
 %% @end
 register_service(Service_Name)
   when is_atom(Service_Name) ->
@@ -68,11 +67,15 @@ register_service(Service_Name)
 
 -spec register_service(service_name(), [register_option()]) -> ok | {error, already_started}.
 %% @doc
-%%    Reserve a service name (see {@link register_service/1}) provide
-%%    an already running pid as the service process to monitor.
-%%    supervisor to add a new {@link uffda_service_fsm} worker.
-%%    If one already exists it is reported as the new registered
-%%    service FSM.
+%%   Reserve a service name (see {@link register_service/1})
+%%   with configuration options specified.
+%%
+%%   The current set of options accepted when registering a service is:
+%%
+%%   <table>
+%%   <tr><th>Option</th><th>Meaning</th></tr>
+%%   <tr><td>stimeout</td><td>Timeout in millis before starting/restarting is considered too slow.</td></tr>
+%%   </table>
 %% @end
 
 register_service(Service_Name, Options)
@@ -84,9 +87,9 @@ register_service(Service_Name, Options)
 
 -spec unregister_service(service_name()) -> ok | {error, term()}.
 %% @doc
-%%    Remove a service name from the service registry.
-%%    This is accomplished internally by asking the registry
-%%    supervisor to stop the {@link uffda_service_fsm} worker.
+%%   Remove a service name from the service registry.
+%%   This is accomplished internally by asking the registry
+%%   supervisor to stop the {@link uffda_service_fsm} worker.
 %% @end
 unregister_service(Service_Name)
   when is_atom(Service_Name) ->

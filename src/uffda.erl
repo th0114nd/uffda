@@ -1,3 +1,20 @@
+%% @doc
+%%   The uffda application creates and manages a service registry
+%%   which may be used to track the current running status of
+%%   a set of  user-defined services. Each service is uniquely named
+%%   and associated with a single pid that purports to be the primary
+%%   active process which provides the service in question.
+%%
+%%   A VM node which runs services may be retro-fitted to send events
+%%   to the uffda service registry, but the performance of any service
+%%   should not be impacted if the service registry is down, crashes
+%%   or is otherwise not available.
+%%
+%%   All interaction with the service registry must go through the
+%%   uffda_client module. It represents the full External API of uffda.
+%%   The functions in this module are only used when a node is started
+%%   or stopped, or the service registry itself should be stopped.
+%% @end
 -module(uffda).
 -behavior(application).
 
