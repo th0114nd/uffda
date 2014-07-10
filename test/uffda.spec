@@ -2,5 +2,5 @@
 {include, ["../include"]}.
 {cover, "./uffda.coverspec"}.
 {suites, uffda, [
-                  uffda_basic_SUITE
+                  uffda_registry_SUITE.erl
                 ]}.
