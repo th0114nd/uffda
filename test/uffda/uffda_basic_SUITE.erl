@@ -16,6 +16,7 @@
         proper_state_sequence/1,
         proper_random_seq/1,
         proper_valid_events/1
+        proper_timeout_test/1
         ]).
 
 -export([
@@ -37,7 +38,8 @@ all() -> [
     proper_state_sequence,
     proper_random_seq,
     proper_valid_events,
-    proper_name_checks
+    proper_name_checks,
+    proper_timeout_test
     ].
 
 init_per_suite(Config) -> Config.
@@ -284,3 +286,24 @@ proper_name_checks(_Config) ->
         false -> ct:log("Counterexamples: ~p~n", [proper:counterexamples()]), false
     end,
     ct:comment("Tested that registering maintains the available names properly.").
+
+proper_timeout_test(_Config) ->
+    ct:log("Verifies starting up won't last forever."),
+    Timeout =
+        ?FORALL(Time, pos_integer(),
+                ?IMPLIES(Time < 30,
+                         begin
+                             create_sleepy_service(foo, Time),
+                             Result = slow_start =:= uffda_client:service_status(foo),
+                             uffda_client:unregister_service(foo),
+                             Result
+                         end)),
+    true = proper:quickcheck(Timeout, ?PQ_NUM(10)),
+    ok.
+
+create_sleepy_service(Name, Time) ->
+    uffda_client:register_service(Name, 0),
+    uffda_client:starting_service(Name, self()),
+    ct:sleep(Time),
+    ok.
+ 
