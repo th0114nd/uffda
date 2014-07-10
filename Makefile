@@ -5,7 +5,7 @@ dep_proper = https://github.com/manopapad/proper v1.1
 
 # Needed for testing
 CT_OPTS := -cover test/uffda.coverspec
-CT_SUITES := uffda_basic
+CT_SUITES := uffda_registry
 
 EDOC_OPTS := {preprocess, true}, {source_path, ["src", "examples", "test/uffda"]}, nopackages, {subpackages, true}
 
