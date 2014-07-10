@@ -28,7 +28,7 @@
          proper_state_sequence/1,
          proper_random_seq/1,
          proper_valid_events/1,
-         proper_timout_test/1
+         proper_timeout_test/1
         ]).
 
 -export([
@@ -366,7 +366,7 @@ proper_timeout_test(_Config) ->
     ct:log("Verifies starting up won't last forever."),
     Timeout =
         ?FORALL(Time, pos_integer(),
-                ?IMPLIES(Time < 30,
+                ?IMPLIES((Time < 50) and (Time > 15),
                          begin
                              create_sleepy_service(foo, Time),
                              Result = slow_start =:= uffda_client:service_status(foo),
@@ -377,7 +377,7 @@ proper_timeout_test(_Config) ->
     ok.
 
 create_sleepy_service(Name, Time) ->
-    uffda_client:register_service(Name, 0),
+    uffda_client:register_service(Name, [{stimeout, 14}]),
     uffda_client:starting_service(Name, self()),
     ct:sleep(Time),
     ok.
