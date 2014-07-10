@@ -17,6 +17,7 @@ digraph G {
 
     up -> restarting [label = "re_init"];
     down -> restarting [label = "re_init"];
+    down -> up [label = "online"];
     crashed -> restarting [label = "re_init"];
     starting_up -> restarting [label = "re_init"];
 
