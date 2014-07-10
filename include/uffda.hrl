@@ -26,4 +26,4 @@
                          | down
                          | up.
 
--define(MAX_STARTUP_TIME, 300).
+-define(MAX_STARTUP_TIME, 3000).

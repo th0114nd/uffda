@@ -64,6 +64,7 @@ default_options() -> #service_options{stimeout = ?MAX_STARTUP_TIME}.
 %% @end
 register_service(Service_Name)
   when is_atom(Service_Name) ->
+    ct:log("Reg 1"),
     register_service(Service_Name, undefined, default_options()).
 
 -spec register_service(service_name(), service_pid()) -> ok.
@@ -80,6 +81,7 @@ register_service(Service_Name, Service_Pid)
 
 register_service(Service_Name, undefined, Options)
   when is_atom(Service_Name), is_record(Options, service_options) ->
+    ct:log("Reg 3"),
     _ = uffda_registry_sup:start_child(Service_Name, undefined, Options),
     ok;
 register_service(Service_Name, Service_Pid, Options)

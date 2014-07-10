@@ -1,28 +1,45 @@
+%% @doc
+%%   Uses common_test suites to drive PropEr testing of uffda.
+%%   The following properties are tested:
+%%
+%%   <ol>
+%%     <li>Register / unregister followed by which_services reports correctly.</li>
+%%     <li>Starting up / restarting can't last forever.</li>
+%%     <li>Any sequence of up / down / crash / restart should reflect proper state.</li>
+%%     <li>Any series of uffda_client calls shouldn't crash regardless of order.</li>
+%%     <li>A service supervised without restart should reflect down/crashed when M of N services are killed.</li>
+%%     <li>A service supervised with R restarts should reflect state changes with repeated failure and M of N services are killed.</li>
+%%   </ol>
+%% @end
 -module(uffda_basic_SUITE).
 -vsn('').
 
 -export([all/0, init_per_suite/1, end_per_suite/1,
          init_per_testcase/2, end_per_testcase/2]).
 -export([
-        easy/1,
-        crash/1,
-        balance_check/3,
-        name_checks/1,
-        name_sanity/1,
-        proc/1,
-        proper_name_checks/1,
-        proper_sanity/1,
-        proper_state_sequence/1,
-        proper_random_seq/1
+         easy/1,
+         crash/1,
+         balance_check/3,
+         name_checks/1,
+         name_sanity/1,
+         proc/1,
+         proper_name_checks/1,
+         proper_sanity/1,
+         proper_state_sequence/1,
+         proper_random_seq/1
         ]).
 
 -export([
-    create_service/1,
-    startup/2
-    ]).
+         create_service/1,
+         startup/2
+        ]).
 
 -include("uffda_common_test.hrl").
 
+-spec all() -> [module()].
+%% @doc
+%%   All testcases that are run.
+%% @end
 all() -> [
     easy,
     easy,
@@ -36,17 +53,39 @@ all() -> [
     proper_name_checks
     ].
 
+-type config() :: proplists:proplist().
+
+-spec init_per_suite(config()) -> config().
+%% @doc
+%%   One time initialization before executing all testcases in this suite.
+%% @end
 init_per_suite(Config) -> Config.
+
+-spec end_per_suite(config()) -> config().
+%% @doc
+%%   One time cleanup after executing all testcases in this suite.
+%% @end
 end_per_suite(Config) -> Config.
 
+-spec init_per_testcase(module(), config()) -> config().
+%% @doc
+%%   Initialization before executing each testcase in this suite.
+%% @end
 init_per_testcase(_TestCase, Config) ->
     ok = uffda:start(),
     Config.
 
+-spec end_per_testcase(module(), config()) -> config().
+%% @doc
+%%   Cleanup after executing each testcase in this suite.
+%% @end
 end_per_testcase(_TestCase, _Config) ->
     uffda:stop().
 
 -spec easy(term()) -> ok.
+%% @doc
+%%   Simple testing of register, online, offline and status reporting.
+%% @end
 easy(_Config) ->
     ct:log("Test basic supervisor / fsm startup and state change capability"),
     ok = uffda_client:register_service(foo),
@@ -59,9 +98,17 @@ easy(_Config) ->
     ok.
 
 -spec create_service(atom()) -> pid().
+%% @hidden
+%% @doc
+%%   Spawn a new test service process to monitor.
+%% @end
 create_service(Name) -> spawn(?MODULE, startup, [Name, self()]).
 
 -spec startup(atom(), pid()) -> term().
+%% @hidden
+%% @doc
+%%   Register and starting up actions for a local test service.
+%% @end
 startup(Name, Caller) ->
     uffda_client:register_service(Name),
     Caller ! {ok, Name},
@@ -69,6 +116,10 @@ startup(Name, Caller) ->
     service_loop(Name).
 
 -spec service_loop(atom()) -> term().
+%% @hidden
+%% @doc
+%%   Receive loop for local test service to induce service events.
+%% @end
 service_loop(Name) ->
     receive
         die   -> exit(kill);
@@ -79,6 +130,11 @@ service_loop(Name) ->
     service_loop(Name).
 
 -spec expect_msg(term()) -> ok | notok | term().
+%% @hidden
+%% @doc
+%%   Collect one message from the incoming queue and verify it is
+%%   the response that was expected.
+%% @end
 expect_msg(Msg) ->
     receive
         Msg -> ok;
@@ -88,6 +144,9 @@ expect_msg(Msg) ->
     end.
 
 -spec proc(term()) -> ok.
+%% @doc
+%%   Verify that the local test process works correctly.
+%% @end
 proc(_Config) ->
     ct:log("Test messaging to the service_registry"),
     Foo = create_service(foo),
@@ -104,6 +163,9 @@ proc(_Config) ->
     ok.
      
 -spec crash(term()) -> ok.
+%% @doc
+%%   Testing that crashing a test service is reflected by the service FSM.
+%% @end
 crash(_Config) ->
     ct:log("Test messaging to the service_registry when service crashes"),
     Foo = create_service(foo),
@@ -127,6 +189,10 @@ crash(_Config) ->
     ct:comment("Tested FSM reaction to a crashing function service"),
     ok.
 
+-spec proper_sanity(term()) -> ok.
+%% @doc
+%%   Validate that any atom can be used to register a service.
+%% @end
 proper_sanity(_Config) ->
     ct:log("A new fsm always has registered status."),
     ok = uffda_client:register_service('0'),
@@ -142,6 +208,10 @@ proper_sanity(_Config) ->
     ok.
 
 -type transition() :: set_service_online | set_service_offline.
+-spec proper_state_sequence(term()) -> ok.
+%% @doc
+%%   Verify that 2 transitions don't cause a problem.
+%% @end
 proper_state_sequence(_Config) ->
     ct:log("Testing states do not get confuddled given a random transition sequence."),
     uffda_client:register_service('foo'),
@@ -165,6 +235,10 @@ proper_state_sequence(_Config) ->
     ok.
 
 -type more_trans() :: starting_service | transition().
+-spec proper_random_seq(term()) -> ok.
+%% @doc
+%%   Verify that any sequence of transitions reflect the correct final state.
+%% @end
 proper_random_seq(_Config) ->
     ct:log("Testing more complex transition sequences."),
     uffda_client:register_service('foo'),
@@ -192,6 +266,10 @@ proper_random_seq(_Config) ->
     true = proper:quickcheck(Rand_Seq, ?PQ_NUM(10)),
     ok.
 
+-spec name_checks(term()) -> ok.
+%% @doc
+%%   Register/unregister produces a valid set.
+%% @end
 name_checks(_Config) ->
     ct:log("Names expected are names returned."),
     [] = uffda_client:which_services(),
@@ -206,6 +284,7 @@ name_checks(_Config) ->
     [] = uffda_client:which_services(),
     ct:comment("A basic way to check names~n").
 
+%% @private
 balance_check([], _Reg, UnReg) ->
     [ok = uffda_client:unregister_service(Un) || Un <- UnReg],
     true;
@@ -231,6 +310,10 @@ balance_check([H|T], Reg, UnReg) ->
              balance_check([H|T], Reg, UnReg)
     end.
 
+-spec name_sanity(term()) -> ok.
+%% @doc
+%%   Check that state is properly cleaned up.
+%% @end
 name_sanity(_Config) ->
     Names = ['','+¬b!Vd','õ\026','\037þ\020o×3]\d×','\210','=',
                      '-\235\b\bM','¾\036'],
@@ -240,6 +323,10 @@ name_sanity(_Config) ->
     [Run() || _ <- lists:seq(1, 5)],
     ct:comment("A basic check that state is properly cleaned up.").
 
+-spec proper_name_checks(term()) -> ok.
+%% @doc
+%%   Any number of register/unregisters returns the proper registered set of names.
+%% @end
 proper_name_checks(_Config) ->
     ct:log("Registered services are the expected ones."),
     NCs = ?FORALL(NameList, list(atom()), 

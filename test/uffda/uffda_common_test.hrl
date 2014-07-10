@@ -4,7 +4,3 @@
 -define(PQ_NUM(__Times), [long_result, {numtests, __Times}]).
 -define(PQ(__Fn), proper:quickcheck(__Fn, ?PG_OPTS)).
 
--type config() :: proplists:proplist().
--spec init_per_suite(config()) -> config().
--spec end_per_suite(config()) -> config().
--spec all() -> [atom()].
