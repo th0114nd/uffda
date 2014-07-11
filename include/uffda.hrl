@@ -5,11 +5,6 @@
 
 -type register_option() :: {max_startup_millis, non_neg_integer()}.
 
--record(service_options, {
-    max_startup_millis :: non_neg_integer()
-    }).
-
--type service_options() :: #service_options{}.
 
 -type service_event()   :: unregister
                          | {starting, service_pid()}
