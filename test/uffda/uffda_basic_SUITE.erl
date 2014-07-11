@@ -284,7 +284,8 @@ proper_valid_events(_Config) ->
                         _ ->
                             uffda_client:Event(foo)
                     end,
-                    (Result =:= ok) or (Result =:= {error, {not_registered, foo}}) or (Result =:= {error, already_started}) 
+                    lists:member(Result, 
+                        [ok, {error, {not_registered, foo}}, {error, already_started}])
                 end)),
     true = proper:quickcheck(Valid_Events, ?PQ_NUM(10)),
     ok.
