@@ -9,15 +9,21 @@ CT_SUITES := uffda_registry uffda_service uffda_system
 
 EDOC_OPTS := {preprocess, true}, {source_path, ["src", "examples", "test/uffda"]}, nopackages, {subpackages, true}
 
-SERVER := erl -pa ebin -pa deps/*/ebin -smp enable -setcookie CISFORCOOKIE
+DEV_SERVER := erl -pa test -pa deps/*/ebin -pa ebin -smp enable -setcookie CISFORCOOKIE
+RUN_SERVER := erl -pa deps/*/ebin -pa ebin -smp enable -setcookie CISFORCOOKIE
 HOST := `hostname` 
 
 
 .PHONY: release clean-release
 
 run: all
-	if [ -n "${NODE}" ]; then ${SERVER} -name ${NODE}@${HOST} -boot start_sasl -s uffda; \
-	else ${SERVER} -name uffda@${HOST} -boot start_sasl -s uffda; \
+	if [ -n "${NODE}" ]; then ${RUN_SERVER} -name ${NODE}@${HOST} -boot start_sasl -s uffda; \
+	else ${RUN_SERVER} -name uffda@${HOST} -boot start_sasl -s uffda; \
+	fi
+
+dev: all build-tests
+	if [ -n "${NODE}" ]; then ${DEV_SERVER} -name ${NODE}@${HOST} -boot start_sasl -s uffda; \
+	else ${DEV_SERVER} -name uffda@${HOST} -boot start_sasl -s uffda; \
 	fi
 
 relxrun: release
