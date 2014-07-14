@@ -35,6 +35,7 @@ create_sup_tree({node, Parent, Children}) ->
     _ = [{ok, _} = supervisor:start_child(Sup_Ref, CS) || CS <- Child_Specs],
     ok;
 create_sup_tree({leaf, Wos}) ->
+    exit(not_implemented),
     case Wos of
         {super, {Name, Module, Args}} -> Module:start_link(Name, Args);
         {worker, {Name, Module, Start_State}} -> Module:start_link(Name, [Start_State])
