@@ -12,3 +12,11 @@
 -type shutdown() :: brutal_kill | pos_integer() | infinity.
 -type workorsup() :: worker | supervisor.
 -type modules() :: [atom()] | dynamic.
+
+
+-spec transition(program()) -> program().
+transition({{Root, Children}, Events}) ->
+
+-spec translate_tree(program()) -> program().
+translate_tree({Tree, Events}) ->
+    transition(Tree, Events)
