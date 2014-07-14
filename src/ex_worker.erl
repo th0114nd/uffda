@@ -1,5 +1,12 @@
+-module(ex_worker).
+-export([start_link/2, startup/2, service_loop/1]).
 
--export[startup/2, service_loop/1]).
+-spec start_link(atom(), any()) -> {ok, pid()}.
+start_link(Name, _Args) ->
+    Pid = spawn(fun() -> startup(Name, self()) end),
+    {ok, Pid}.
+
+    
 -spec startup(atom(), pid()) -> term().
 %% @hidden
 %% @doc

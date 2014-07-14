@@ -1,7 +1,7 @@
-{startup, {node, {supervisor, {root, ex_super, []}},
+{node, {supervisor, {root, ex_super, {}}},
         [{worker, {a, ex_worker, up}},
          {worker, {b, ex_worker, down}},
-         {worker, {c, ex_worker, crashed}}]}}.
+         {worker, {c, ex_worker, crashed}}]}.
 {a, go_up}.
 {a, crash}.
 {b, go_up}.
