@@ -2,7 +2,7 @@
 -export([parse_fom_file/1, run_program/1]).
 -include("uffda.hrl").
 
--export([parse_from_file/1, run_program/1]).
+-export([parse_from_file/1, run_program/1, create_sup_tree/1]).
 -type program() :: {{startup, sup_tree_spec()}, {actions, [action()]}}.
 -type sup_tree_spec() :: {leaf, wos()} | {node, wos(), [sup_tree_spec()]}.
 -type wos() :: {worker, worker_desc()} | {supervisor, super_desc()}.
@@ -18,7 +18,7 @@
 parse_from_file(File_Name) ->
     {ok, Raw} = file:consult(File_Name),
     [TreeSpec | Actions] = Raw,
-    {TreeSpec, Actions}.
+    {{startup, TreeSpec}, {actions, Actions}}.
 
 -spec run_program(program()) -> ok | {error, reason()}.
 run_program({Sup_Tree, Actions}) ->
@@ -28,9 +28,10 @@ run_program({Sup_Tree, Actions}) ->
     ok = execute_all(Actions).
 
 -spec create_sup_tree(sup_tree_spec()) -> ok.
-create_sup_tree({node, Parent, Children}) ->
+create_sup_tree({node, {supervisor, Parent}, Children}) ->
     {Name, Module, Args} = Parent,
-    {ok, Sup_Ref} = supervisor:start_link(Name, Module, Args),
+    io:format("Name: ~p Mod: ~p Args ~p~n", [Name, Module, Args]),
+    {ok, Sup_Ref} = supervisor:start_link({local, Name}, Module, Args),
     Child_Specs = [create_child_spec(Child) || Child <- Children],
     _ = [{ok, _} = supervisor:start_child(Sup_Ref, CS) || CS <- Child_Specs],
     ok;
@@ -59,7 +60,7 @@ create_child_spec({super, S}) -> create_super_child_spec(S).
 
 -spec create_worker_child_spec(worker_desc()) -> supervisor:child_spec().
 create_worker_child_spec({Name, Module, Starting_State}) ->
-    {Name, {Module, start_link, [Starting_State]}, transient, 1000, worker, [Module]}.
+    {Name, {Module, start_link, [Name, Starting_State]}, transient, 1000, worker, [Module]}.
 
 -spec create_super_child_spec(super_desc()) -> supervisor:child_spec().
 create_super_child_spec({Name, Module, Args}) ->
