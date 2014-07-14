@@ -1,5 +1,5 @@
 -module(tree_processing).
--exports([translate_tree/1]).
+-export([translate_tree/1]).
 
 -inlcude("uffda_dsl.erl").
 

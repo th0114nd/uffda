@@ -2,6 +2,7 @@
 -export([parse_fom_file/1, run_program/1]).
 -include("uffda.hrl").
 
+-export([parse_from_file/1, run_program/1]).
 -type program() :: {{startup, sup_tree_spec()}, {actions, [action()]}}.
 -type sup_tree_spec() :: {leaf, wos()} | {node, wos(), [sup_tree_spec()]}.
 -type wos() :: {worker, worker_desc()} | {supervisor, super_desc()}.
@@ -63,4 +64,3 @@ create_worker_child_spec({Name, Module, Starting_State}) ->
 -spec create_super_child_spec(super_desc()) -> supervisor:child_spec().
 create_super_child_spec({Name, Module, Args}) ->
     {Name, {Module, start_link, Args}, transient, 1000, supervisor, [Module]}.
-
