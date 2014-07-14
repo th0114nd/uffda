@@ -18,7 +18,7 @@ HOST := `hostname`
 
 run: all
 	if [ -n "${NODE}" ]; then ${RUN_SERVER} -name ${NODE}@${HOST} -boot start_sasl -s uffda; \
-	else ${RUN_SERVER} -name uffda@${HOST} -boot start_sasl -s uffda; \
+	else ${RUN_SERVER} -name uffda@${HOST} -boot start_sasl; \
 	fi
 
 dev: all build-tests

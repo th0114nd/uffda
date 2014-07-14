@@ -49,11 +49,13 @@
         ]).
 
 -include("uffda.hrl").
+-define(SUP_SERVER, uffda_registry_sup).
 
 -spec default_options_plist() -> [register_option()].
 default_options_plist() -> [].
 
--spec register_service(service_name()) -> ok.
+-spec register_service(service_name()) -> ok | {error, already_started}
+                                              | {error, {not_started, ?SUP_SERVER}}.
 %% @doc
 %%   Reserve a service name for future monitoring.
 %%   This is accomplished internally by asking the registry
@@ -65,7 +67,8 @@ register_service(Service_Name)
   when is_atom(Service_Name) ->
     register_service(Service_Name, default_options_plist()).
 
--spec register_service(service_name(), [register_option()]) -> ok | {error, already_started}.
+-spec register_service(service_name(), [register_option()])
+                      -> ok | {error, already_started} | {error, {not_started, ?SUP_SERVER}}.
 %% @doc
 %%   Reserve a service name (see {@link register_service/1})
 %%   with configuration options specified.
@@ -82,7 +85,8 @@ register_service(Service_Name, Options)
   when is_atom(Service_Name) ->
     case uffda_registry_sup:start_child(Service_Name, undefined, Options) of
         {ok, _Fsm_Pid} -> ok;
-        {error, {already_started, _Fsm_Pid}} -> {error, already_started}
+        {error, {already_started, _Fsm_Pid}} -> {error, already_started};
+        {error, {not_started,  ?SUP_SERVER}} -> {error, {not_started, ?SUP_SERVER}}
     end.
 
 -spec unregister_service(service_name()) -> ok | {error, term()}.
@@ -100,6 +104,9 @@ unregister_service(Service_Name)
     end.
 
 get_registered_fsm(Service_Name) ->
+    ?IF_UFFDA_RUNNING(?SUP_SERVER, get_pid_for_fsm(Service_Name)).
+
+get_pid_for_fsm(Service_Name) ->
     case uffda_service_fsm:existing_fsm_name_from_service(Service_Name) of
         Fsm_Name when is_atom(Fsm_Name) ->
             case whereis(Fsm_Name) of
@@ -109,16 +116,19 @@ get_registered_fsm(Service_Name) ->
         Error -> Error
     end.
 
--spec which_services() -> [service_name()].
+-spec which_services() -> [service_name()] | {error, {not_started, ?SUP_SERVER}}.
 %% @doc
 %%   Return a list of all the services that are currently registered,
 %%   regardless of their current status.
 %% @end
 which_services() ->
-    FSM_Pids = which_service_fsms(),
-    [gen_fsm:sync_send_all_state_event(FSM, get_service_name) || FSM <- FSM_Pids].
+    case which_service_fsms() of
+        {error, {not_started, _Registry_Module}} = Error -> Error;
+        FSM_Pids when is_list(FSM_Pids) ->
+            [gen_fsm:sync_send_all_state_event(FSM, get_service_name) || FSM <- FSM_Pids]
+    end.
 
--spec which_service_fsms() -> [service_fsm_pid()].
+-spec which_service_fsms() -> [service_fsm_pid()] | {error, {not_started, ?SUP_SERVER}}.
 %% @private
 %% @doc
 %%   Return a list of all the service_fsm pids that are currently registered,
@@ -129,8 +139,13 @@ which_service_fsms() ->
 
 
 %% Service events cause the Service FSM to change the service status.
--type event_response()  :: {error, {not_registered, service_name()}} | ok.
--type status_response() :: {error, {not_registered, service_name()}} | service_status().
+-type event_response()  :: {error, {not_registered, service_name()}}
+                         | {error, {not_started,    ?SUP_SERVER}}
+                         | ok.
+
+-type status_response() :: {error, {not_registered, service_name()}}
+                         | {error, {not_started,    ?SUP_SERVER}}
+                         | service_status().
 
 
 -spec starting_service(service_name()) -> event_response().
