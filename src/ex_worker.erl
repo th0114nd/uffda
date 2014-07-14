@@ -15,7 +15,7 @@ start_link(Name, _Args) ->
 startup(Name, Caller) ->
     uffda_client:register_service(Name),
     Caller ! {ok, Name},
-    uffda_client:starting_service(Name, self()),
+    ok = uffda_client:starting_service(Name, self()),
     service_loop(Name).
 
 -spec service_loop(atom()) -> term().
@@ -24,7 +24,7 @@ startup(Name, Caller) ->
 %%   Receive loop for local test service to induce service events.
 %% @end
 service_loop(Name) ->
-    receive
+    _  = receive
         die   -> exit(kill);
         up    -> uffda_client:set_service_online(Name);
         down  -> uffda_client:set_service_offline(Name);
