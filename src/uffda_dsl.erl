@@ -3,7 +3,7 @@
 -include("uffda.hrl").
 
 -export([parse_from_file/1, run_program/1]).
--type program() :: {sup_tree_spec(), [action()]}.
+-type program() :: {{startup, sup_tree_spec()}, {actions, [action()]}}.
 -type sup_tree_spec() :: {leaf, wos()} | {node, wos(), [sup_tree_spec()]}.
 -type wos() :: {worker, worker_desc()} | {supervisor, super_desc()}.
 % In general, {Name, Module, Args}
