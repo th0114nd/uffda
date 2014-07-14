@@ -20,7 +20,7 @@
 %% PUBLIC API
 %%-------------------------------------------------------------------
 
--spec start_link() -> {ok, pid()}.
+-spec start_link() -> {ok, pid()} | {error, {not_started, ?SERVER}}.
 %% @doc
 %%   Start the central Uffda Service Registry supervisor.
 %%   It manages one {@link uffda_service_fsm} per registered service.
@@ -31,30 +31,34 @@ start_link() ->
 
 -spec start_child(service_name(), service_pid() | undefined, proplists:proplist())
                  -> {ok, service_fsm_pid()}
-                        | {error, {already_started, service_fsm_pid()}}.
+                        | {error, {already_started, service_fsm_pid()}}
+                        | {error, {not_started, ?SERVER}}.
 %% @doc
 %%   Create a new {@link uffda_service_fsm} process for the Pid specified by
 %%   Service pid, or waits for a pid if it is 'undefined'.
 %% @end
 start_child(Service_Name, Service_Pid, Options)
-  when is_atom(Service_Name), (is_pid(Service_Pid) or (Service_Pid == undefined)), is_list(Options)  ->
-    supervisor:start_child(?MODULE, [Service_Name, Service_Pid, Options]).
+  when is_atom(Service_Name), ((Service_Pid =:= undefined) orelse is_pid(Service_Pid)), is_list(Options) ->
+    ?IF_UFFDA_RUNNING(?SERVER, supervisor:start_child(?SERVER, [Service_Name, Service_Pid, Options])).
 
--spec stop_child(service_fsm_pid()) -> ok | {error, any()}.
+-spec stop_child(service_fsm() | service_fsm_pid()) -> ok | {error, any()}.
 %% @doc
 %%   Stop a registered {@link uffda_service_fsm}. The service name
 %%   will no longer be registered.
 %% @end
-stop_child(Pid)
-  when is_pid(Pid) ->
-    supervisor:terminate_child(?SERVER, Pid).
+stop_child(Service_Name)
+  when is_atom(Service_Name) ->
+    ?IF_UFFDA_RUNNING(?SERVER, supervisor:terminate_child(?SERVER, Service_Name));
+stop_child(Service_Pid)
+  when is_pid(Service_Pid) ->
+    ?IF_UFFDA_RUNNING(?SERVER, supervisor:terminate_child(?SERVER, Service_Pid)).
 
--spec which_services() -> [service_fsm_pid()].
+-spec which_services() -> [service_fsm_pid()] | {error, {not_started, ?SERVER}}.
 %% @doc
 %   Fetch a list of the registered {@link uffda_service_fsm} pids.
 %% @end
 which_services() ->
-    [Pid || {undefined, Pid, worker, _Mod} <- supervisor:which_children(?SERVER)].
+    ?IF_UFFDA_RUNNING(?SERVER, [Child_Pid || {undefined, Child_Pid, worker, _Mod} <- supervisor:which_children(?SERVER)]).
 
 
 %%----------------------------------------------------------------------

@@ -89,7 +89,7 @@ existing_fsm_name_from_service(Service_Name) ->
 %%   or slow_restart state until another event is provided.
 %% @end
 start_link(Service_Name, Service_Pid, Options) 
-  when is_atom(Service_Name), is_pid(Service_Pid) or (Service_Pid == undefined), is_list(Options) ->
+  when is_atom(Service_Name), ((Service_Pid =:= undefined) orelse is_pid(Service_Pid)), is_list(Options) ->
     Service_Fsm = list_to_atom(fsm_name_from_service(Service_Name)),
     gen_fsm:start_link({local, Service_Fsm}, ?MODULE, {Service_Name, Service_Pid, Options}, []).
 
@@ -228,12 +228,10 @@ up_down_transition(Event,    State_Data,  Current_State) ->
 %% @doc
 %%   Initialize the state machine to begin in the 'REGISTERED' state.
 %% @end
-init({Service_Name, undefined, Options})
-  when is_list(Options) ->
+init({Service_Name, undefined, Options}) ->
     Timeout = proplists:get_value(max_startup_millis, Options, ?MAX_STARTUP_TIME),
     {ok, ?STATE_REGISTERED, #state_data{name=Service_Name, max_startup_time=Timeout}};
-init({Service_Name, Service_Pid, Options})
-  when is_list(Options) ->
+init({Service_Name, Service_Pid, Options}) ->
     Timeout = proplists:get_value(max_startup_millis, Options, ?MAX_STARTUP_TIME),
     {ok, ?STATE_REGISTERED, reinitialize(Service_Name, Service_Pid, #state_data{max_startup_time=Timeout})}.
 
@@ -244,10 +242,10 @@ init({Service_Name, Service_Pid, Options})
 %%   monitored, change the saved state data and monitor the new pid.
 %% @end
 reinitialize(Service_Name, Service_Pid, #state_data{monitor_ref = Old_Mon_Ref} = Old_State_Data) ->
-    true = Old_Mon_Ref =:= undefined
+    true = (Old_Mon_Ref =:= undefined)
         orelse erlang:demonitor(Old_Mon_Ref, [flush]),
-    Mon_Ref = erlang:monitor(process, Service_Pid),
-    Old_State_Data#state_data{name = Service_Name, pid = Service_Pid, monitor_ref = Mon_Ref}.
+    New_Mon_Ref = erlang:monitor(process, Service_Pid),
+    Old_State_Data#state_data{name = Service_Name, pid = Service_Pid, monitor_ref = New_Mon_Ref}.
 
 -spec handle_event(any(), State_Name, State_Data)
                   -> {next_state, State_Name, State_Data}
