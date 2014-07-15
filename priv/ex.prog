@@ -2,6 +2,6 @@
         [{leaf, {worker, {a, ex_worker, up}}},
          {leaf, {worker, {b, ex_worker, down}}},
          {leaf, {worker, {c, ex_worker, crashed}}}]}.
-{a, go_up}.
-{a, crash}.
-{b, go_up}.
+{a, online}.
+{a, offline}.
+{b, online}.
