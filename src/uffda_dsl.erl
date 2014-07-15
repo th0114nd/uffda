@@ -18,10 +18,10 @@
 parse_from_file(File_Name) ->
     {ok, Raw} = file:consult(File_Name),
     [TreeSpec | Actions] = Raw,
-    {{startup, TreeSpec}, {actions, Actions}}.
+    {ok, {{startup, TreeSpec}, {actions, Actions}}}.
 
 -spec run_program(program()) -> ok | {error, reason()}.
-run_program({Sup_Tree, Actions}) ->
+run_program({{startup, Sup_Tree}, {actions, Actions}}) ->
     % Make sure that all the actions refer to workers present in the tree.
     true = ensure_workers_valid(Sup_Tree, Actions),
     ok = create_sup_tree(Sup_Tree),
