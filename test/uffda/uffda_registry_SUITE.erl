@@ -33,7 +33,12 @@
         ]).
 
 %% Dev shell testing
--export([prop_register_unregister/0]).
+-export([
+         prop_start_application/0,
+         prop_register_simple_name/0,
+         prop_register_service_name/0
+%%         prop_register_unregister/0
+        ]).
 
 
 -include("uffda_common_test.hrl").
@@ -93,19 +98,13 @@ end_per_group(Config) -> Config.
 %% @doc
 %%   Initialization before executing each testcase in this suite.
 %% @end
-init_per_testcase(verify_start_application, Config) -> Config;
-init_per_testcase(_TestCase, Config) ->
-    ok = uffda:start(),
-    Config.
+init_per_testcase(_Test_Case, Config) -> Config.
 
 -spec end_per_testcase(module(), config()) -> config().
 %% @doc
 %%   Cleanup after executing each testcase in this suite.
 %% @end
-end_per_testcase(verify_start_application, Config) -> Config;
-end_per_testcase(_TestCase, Config) ->
-    ok = uffda:stop(),
-    Config.
+end_per_testcase(_TestCase, Config) -> Config.
 
 -spec verify_start_application(config()) -> true.
 %% @doc
@@ -114,9 +113,13 @@ end_per_testcase(_TestCase, Config) ->
 %%   removes the service registry.
 %% @end
 verify_start_application(_Config) ->
-    Service_Name = foo,
-
     ct:log("Register, unregister, and which_services have no effect when uffda not yet started"),
+    true = prop_start_application(),
+    ct:comment("Tested that missing registry does not crash the code"),
+    true.
+
+prop_start_application() ->
+    Service_Name = foo,
     {error, {not_started, uffda_registry_sup}} = uffda_client:register_service   (Service_Name),
     {error, {not_started, uffda_registry_sup}} = uffda_client:unregister_service (Service_Name),
     {error, {not_started, uffda_registry_sup}} = uffda_client:which_services(),
@@ -134,8 +137,8 @@ verify_start_application(_Config) ->
 
     ct:log("uffda_client:which_services/0 doesn't work after uffda has stopped"),
     {error, {not_started, uffda_registry_sup}} = uffda_client:which_services(),
-    ct:comment("Tested that missing registry does not crash the code"),
     true.
+    
 
 -spec verify_register_simple_name(config()) -> true.
 %% @doc
@@ -159,8 +162,17 @@ verify_register_service_name(_Config) ->
     ct:comment("Tested that registering works with any legal atom as a service name."),
     true.
 
-prop_register_simple_name()  -> register_one_name(alpha).
-prop_register_service_name() -> register_one_name(atom).
+prop_register_simple_name() ->
+    ok = uffda:start(),
+    Result = register_one_name(alpha),
+    ok = uffda:stop(),
+    Result.
+
+prop_register_service_name() ->
+    ok = uffda:start(),
+    Result = register_one_name(atom),
+    ok = uffda:stop(),
+    Result.
 
 register_one_name(Type) ->
     Name_Test
@@ -195,26 +207,26 @@ atom_list(atom)  -> atom().
 %% @end
 verify_register_unregister(_Config) ->
     ct:log("Unregister is the reverse of register."),
-    true = prop_register_unregister(),
+%%    true = prop_register_unregister(),
     ct:comment("Tested that registering maintains the available names properly."),
     true.
 
 -type ascii() :: integer(32..127).
-prop_register_unregister() ->
-    NCs = ?FORALL(NameList, list(list(range(32, 127))), 
-            ?IMPLIES((10 < length(NameList)) and (length(NameList) < 200),
-              %% Ensure that synchronous messaging doesn't block.
-              ?TIMEOUT(5000,
-                  begin
-                      UniqueNameList = [list_to_atom(N) 
-                                        || N <- ordsets:to_list(ordsets:from_list(NameList))],
-                      %% ?WHENFAIL(
-                         ct:log("UNL: ~p~n", [UniqueNameList]),
-                               %% ), 
-                        balance_check(UniqueNameList, ordsets:new(), [])
-                          %% )
-                  end))),
-    proper:quickcheck(NCs, ?PQ_NUM(3)).
+%% prop_register_unregister() ->
+%%     NCs = ?FORALL(NameList, list(list(range(32, 127))), 
+%%             ?IMPLIES((10 < length(NameList)) and (length(NameList) < 200),
+%%               %% Ensure that synchronous messaging doesn't block.
+%%               ?TIMEOUT(5000,
+%%                   begin
+%%                       UniqueNameList = [list_to_atom(N) 
+%%                                         || N <- ordsets:to_list(ordsets:from_list(NameList))],
+%%                       %% ?WHENFAIL(
+%%                          ct:log("UNL: ~p~n", [UniqueNameList]),
+%%                                %% ), 
+%%                         balance_check(UniqueNameList, ordsets:new(), [])
+%%                           %% )
+%%                   end))),
+%%     proper:quickcheck(NCs, ?PQ_NUM(3)).
 
 %% @private
 balance_check([], _Reg, UnReg) ->
