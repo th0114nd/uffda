@@ -32,7 +32,7 @@ create_sup_tree({node, {supervisor, Parent}, Children}) ->
     {Name, Module, Args} = Parent,
     io:format("Name: ~p Mod: ~p Args ~p~n", [Name, Module, Args]),
     {ok, Sup_Ref} = supervisor:start_link({local, Name}, Module, Args),
-    Child_Specs = [create_child_spec(Child) || Child <- Children],
+    Child_Specs = [create_child_spec(Child) || {leaf, Child} <- Children],
     _ = [{ok, _} = supervisor:start_child(Sup_Ref, CS) || CS <- Child_Specs],
     ok;
 create_sup_tree({leaf, Wos}) ->
