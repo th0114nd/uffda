@@ -24,3 +24,10 @@
                          | up.
 
 -define(MAX_STARTUP_TIME, 3000).
+
+-define(IF_UFFDA_RUNNING(__Server, __Action),
+        case whereis(__Server) of
+            undefined -> {error, {not_started, __Server}};
+            __Uffda_Pid when is_pid(__Uffda_Pid) ->
+                __Action
+        end).
