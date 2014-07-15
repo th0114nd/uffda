@@ -1,8 +1,8 @@
 -module(uffda_dsl).
--export([parse_fom_file/1, run_program/1]).
+-export([parse_from_file/1, run_program/1, create_sup_tree/1]).
+
 -include("uffda.hrl").
 
--export([parse_from_file/1, run_program/1, create_sup_tree/1]).
 -type program() :: {{startup, sup_tree_spec()}, {actions, [action()]}}.
 -type sup_tree_spec() :: {leaf, wos()} | {node, wos(), [sup_tree_spec()]}.
 -type wos() :: {worker, worker_desc()} | {supervisor, super_desc()}.
