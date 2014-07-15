@@ -33,36 +33,32 @@
 %%------------------------------------------------------------
 
 -spec verify_all_scenarios(Test_Model :: tc_proper_model())
-                        -> {true, Number_Of_Passed_Scenarios :: pos_integer()}
-                               | {false, Number_Of_Passed_Scenarios :: pos_integer(),
-                                  Failed_Scenarios :: [tc_proper_scenario()]}.
+                        -> {boolean(), Number_Of_Passed_Scenarios :: pos_integer(),
+                            Failed_Scenarios :: [tc_proper_scenario()]}.
 %% @doc
 %%   Given a model and corresponding scenarios, generate observed test cases and
 %%   validate that they all pass.
 %% @end
 verify_all_scenarios(#tc_proper_model{scenarios=[]}) -> {true, []};
 verify_all_scenarios(#tc_proper_model{behaviour=Module, scenarios=Scenarios}) ->
-    {Success, Failed_Cases}
+    {Success, Success_Case_Count, Failed_Cases}
         = lists:foldl(fun(#tc_proper_scenario{instance=Case_Number} = Scenario_Instance,
-                          {Boolean_Result, Failures}) when Case_Number > 0 ->
+                          {Boolean_Result, Success_Case_Count, Failures}) when Case_Number > 0 ->
                         try
                             Test_Case     = generate_test_case     (Module, Scenario_Instance),
                             Observed_Case = generate_observed_case (Module, Scenario_Instance),
                             case passed_test_case(Module, Observed_Case) of
                                 %% Errors should not be possible as we have filled in Observed_Case properly.
-                                {ok, true}  -> {Boolean_Result, Failures};
-                                {ok, false} -> {false,          [Observed_Case | Failures]}
+                                {ok, true}  -> {Boolean_Result, Success_Case_Count+1, Failures};
+                                {ok, false} -> {false,          Success_Case_Count,   [Observed_Case | Failures]}
                             end
                         catch Error:Type ->
                                 error_logger:error_msg("Scenario instance ~p crashed with ~p  Stacktrace: ~p~n",
                                                        [Scenario_Instance, {Error, Type}, erlang:get_stacktrace()]),
-                                {false, [Scenario_Instance]}
+                                {false, Success_Case_Count, [Scenario_Instance | Failures]}
                         end
-                end, {true, []}, Scenarios),
-    case Success of
-        true  -> {true, length(Scenarios)};
-        false -> {false, length(Scenarios) - length(Failed_Cases), lists:reverse(Failed_Cases)}
-    end.
+                end, {true, 0, []}, Scenarios),
+    {Success, Success_Case_Count, lists:reverse(Failed_Cases)}.
 
 
 %%------------------------------------------------------------
