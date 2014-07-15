@@ -1,6 +1,6 @@
 -module(uffda_dsl).
 -export([parse_from_file/1, run_program/1, create_sup_tree/1]).
-
+-export_type([program/0]).
 -include("uffda.hrl").
 
 -type program() :: {{startup, sup_tree_spec()}, {actions, [action()]}}.
@@ -10,10 +10,11 @@
 -type super_desc() :: {atom(), ex_super, term()}.
 % {Name, Module, starting_state}
 -type worker_desc() :: {atom(), ex_worker, service_status()}.
--type action() :: {service_name(), service_event()}.
+-type action() :: {service_name(), real_world_event()}.
 
 -type reason() :: term().
 
+-type real_world_event() :: go_up | go_down | crash.
 -spec parse_from_file(string() | atom() | binary()) -> {ok, program()} | {error, reason()}. 
 parse_from_file(File_Name) ->
     {ok, Raw} = file:consult(File_Name),

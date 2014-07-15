@@ -21,7 +21,7 @@
         ]).
 
 -export([
-         single_no_restart/1, single_with_restart/1, tree_restart/1
+         single_no_restart/1, single_with_restart/1, tree_restart/1, dsl_first_run/1
         ]).
 
 
@@ -32,7 +32,7 @@
 %% @doc
 %%   All testcase groups that are run.
 %% @end
-all() -> [{group, supervised_services}].
+all() -> [{group, supervised_services}, dsl_first_run].
 
 -spec groups() -> [test_group()].
 %% @doc
@@ -110,3 +110,16 @@ single_with_restart(_Config) ->
 %% @end
 tree_restart(_Config) ->
     true.
+
+-spec dsl_first_run(config()) -> true.
+%% @doc
+%%   A check that the random generation of programs works
+%%   properly. 
+%% @end
+dsl_first_run(_Config) ->
+    Gen_Test = ?FORALL(Prog, uffda_dsl:program(), 
+        begin
+            ct:log("Program: ~p", [Prog]),
+            true
+        end),
+    true = proper:quickcheck(Gen_Test, ?PQ_NUM(10)).

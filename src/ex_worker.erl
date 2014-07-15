@@ -13,6 +13,7 @@ start_link(Name, _Args) ->
 %%   Register and starting up actions for a local test service.
 %% @end
 startup(Name, Caller) ->
+    true = register(Name, self()),
     uffda_client:register_service(Name),
     Caller ! {ok, Name},
     ok = uffda_client:starting_service(Name, self()),
