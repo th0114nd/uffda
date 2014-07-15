@@ -25,9 +25,10 @@ startup(Name, Caller) ->
 %% @end
 service_loop(Name) ->
     _  = receive
-        die   -> exit(kill);
-        up    -> uffda_client:set_service_online(Name);
-        down  -> uffda_client:set_service_offline(Name);
+        {whoami, Pid} -> Pid ! Name;
+        crash   -> exit(kill);
+        go_up    -> uffda_client:set_service_online(Name);
+        go_down  -> uffda_client:set_service_offline(Name);
         {state, Pid} -> Pid ! uffda_client:service_status(Name)
     end,
     service_loop(Name).

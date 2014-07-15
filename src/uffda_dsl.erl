@@ -25,6 +25,7 @@ run_program({{startup, Sup_Tree}, {actions, Actions}}) ->
     % Make sure that all the actions refer to workers present in the tree.
     true = ensure_workers_valid(Sup_Tree, Actions),
     ok = create_sup_tree(Sup_Tree),
+    io:format("Actions: ~p", [Actions]),
     ok = execute_all(Actions).
 
 -spec create_sup_tree(sup_tree_spec()) -> ok.
