@@ -11,6 +11,7 @@
 
 %% All types used to express the live implementation of a scenario
 -type tc_proper_scenario_live_ref()    :: term().
+-type tc_proper_scenario_live_desc()   :: term().
 -type tc_proper_scenario_live_status() :: term().
 -type tc_proper_scenario_live_events() :: [term()].
 
@@ -31,10 +32,10 @@
 -record(tc_proper_test_case,
         {
           scenario        :: tc_proper_scenario(),
-          expected_status = ?TC_MISSING_TEST_CASE_ELEMENT :: tc_proper_scenario_dsl_status()
-                                                           | ?TC_MISSING_TEST_CASE_ELEMENT,
-          observed_status = ?TC_MISSING_TEST_CASE_ELEMENT :: tc_proper_scenario_live_status()
-                                                           | ?TC_MISSING_TEST_CASE_ELEMENT
+          expected_status  = ?TC_MISSING_TEST_CASE_ELEMENT :: tc_proper_scenario_dsl_status()
+                                                            | ?TC_MISSING_TEST_CASE_ELEMENT,
+          observed_status  = ?TC_MISSING_TEST_CASE_ELEMENT :: tc_proper_scenario_live_status()
+                                                            | ?TC_MISSING_TEST_CASE_ELEMENT
         }).
 
 -type tc_proper_test_case() :: #tc_proper_test_case{}.
@@ -52,4 +53,6 @@
           scenarios = [] :: [tc_proper_scenario()]     % A set of scenarios to be tested
         }).
 
--type tc_proper_model()  :: #tc_proper_model{}.
+-type tc_proper_model()        :: #tc_proper_model{}.
+-type tc_proper_model_result() :: {boolean(), Number_Of_Passed_Scenarios :: pos_integer(),
+                                   Failed_Scenarios :: [tc_proper_scenario()]}.

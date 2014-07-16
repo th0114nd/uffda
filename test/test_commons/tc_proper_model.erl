@@ -14,36 +14,48 @@
 %% @end
 -module(tc_proper_model).
 
-%% Certifying code against a proper model instance.
--export([generate_proper_model/3, verify_all_scenarios/1]).
+%% External API: Certifying code against a set of proper model instances.
+-export([
+         test_all_models/1,
+         verify_all_scenarios/1
+        ]).
 
 %% Steps used to validate a single scenario.
--export([generate_test_case/2, generate_observed_case/2, passed_test_case/2]).
+-export([
+         generate_test_case/2,
+         generate_observed_case/2,
+         passed_test_case/2
+        ]).
 
 -include("tc_proper_model.hrl").
 
-%% Callbacks for tc_proper_module behaviours to implement.
--callback generate_proper_model         (Model_Id           :: tc_proper_model_id(),
-                                         Source             :: tc_proper_model_source()) -> tc_proper_model().
-    
--callback deduce_proper_expected_status (Scenario_Instance  :: tc_proper_scenario())     -> Expected_Status :: term().
--callback generate_proper_observation   (Test_Case_Instance :: tc_proper_test_case())    -> Observed_Status :: term().
--callback passed_proper_test_case       (Case_Number        :: pos_integer(),
-                                         Expected_Status    :: tc_proper_scenario_dsl_status(),
-                                         Observed_Status    :: tc_proper_scenario_live_status())  -> boolean().
+%% Behaviour callbacks for generating a tc_proper_model and expected outcomes
+-callback test_model_ids() -> [{Model_Id :: tc_proper_model_id(), Source :: tc_proper_model_source()}].
+-callback generate_proper_model(Model_Id :: tc_proper_model_id(), Source :: tc_proper_model_source()) -> tc_proper_model().
+-callback deduce_proper_expected_status(Scenario_Instance :: tc_proper_scenario()) -> Expected_Status :: term().
+
+%% Behaviour callbacks used per scenario when validating against the model
+-callback vivify_proper_scenario(Scenario :: tc_proper_scenario()) -> tc_proper_scenario_live_ref().
+-callback translate_proper_scenario_dsl(tc_proper_scenario_dsl_desc()) -> tc_proper_scenario_live_desc().
+-callback translate_proper_scenario_events(tc_proper_scenario_dsl_events()) -> tc_proper_scenario_live_events().
+-callback generate_proper_observation(Test_Case_Instance :: tc_proper_test_case()) -> Observed_Status :: term().
+-callback passed_proper_test_case(Case_Number     :: pos_integer(),
+                                  Expected_Status :: tc_proper_scenario_dsl_status(),
+                                  Observed_Status :: tc_proper_scenario_live_status()) -> boolean().
 
 
-%%------------------------------------------------------------
-%% Functions for testing a proper_model instance.
-%%------------------------------------------------------------
+%%-------------------------------------------------------------------
+%% External API for testing all models implemented by a module.
+%%-------------------------------------------------------------------
 
--spec generate_proper_model(Module :: module(), Model_Id :: tc_proper_model_id(), Source :: tc_proper_model_source()) -> tc_proper_model().
-generate_proper_model(Module, Model_Id, Source) ->
-    Module:generate_proper_model(Model_Id, Source).
-    
--spec verify_all_scenarios(Test_Model :: tc_proper_model())
-                        -> {boolean(), Number_Of_Passed_Scenarios :: pos_integer(),
-                            Failed_Scenarios :: [tc_proper_scenario()]}.
+-spec test_all_models(module()) -> [{tc_proper_model_id(), tc_proper_model_result()}].
+test_all_models(Module) ->
+    [begin
+         Test_Model = Module:generate_proper_model(Model_Id, Source),
+         {Model_Id, verify_all_scenarios(Test_Model)}
+     end || {Model_Id, Source} <- Module:test_model_ids()].
+
+-spec verify_all_scenarios(Test_Model :: tc_proper_model()) -> tc_proper_model_result().
 %% @doc
 %%   Given a model and corresponding scenarios, generate observed test cases and
 %%   validate that they all pass.
@@ -70,9 +82,9 @@ verify_all_scenarios(#tc_proper_model{behaviour=Module, scenarios=Scenarios}) ->
     {Success, Success_Case_Count, lists:reverse(Failed_Cases)}.
 
 
-%%------------------------------------------------------------
-%% Steps used to validate a single scenario.
-%%------------------------------------------------------------
+%%-------------------------------------------------------------------
+%% Internal API steps used to validate a single scenario.
+%%-------------------------------------------------------------------
 
 -spec generate_test_case(module(), tc_proper_scenario()) -> tc_proper_test_case().
 %% @doc
@@ -93,9 +105,10 @@ generate_test_case(Module, #tc_proper_scenario{instance=Case_Number} = Scenario_
 %%   returns an instance of an observed test case that can be validated later.
 %% @end
 generate_observed_case(Module,
-                       #tc_proper_test_case{scenario=#tc_proper_scenario{instance=Case_Number},
+                       #tc_proper_test_case{scenario=#tc_proper_scenario{instance=Case_Number} = Scenario_Dsl,
                                             observed_status=?TC_MISSING_TEST_CASE_ELEMENT} = Unexecuted_Test_Case)
   when is_integer(Case_Number), Case_Number > 0 ->
+    Live_Model_Ref = Module:vivify_proper_scenario(Scenario_Dsl),
     Observation = Module:generate_proper_observation(Module, Unexecuted_Test_Case),
     #tc_proper_test_case{observed_status=Observation}.
 
