@@ -21,7 +21,7 @@
         ]).
 
 -export([
-         single_no_restart/1, single_with_restart/1, tree_restart/1
+         single_no_restart/1, single_with_restart/1, tree_restart/1, dsl_first_run/1
         ]).
 
 
@@ -32,7 +32,7 @@
 %% @doc
 %%   All testcase groups that are run.
 %% @end
-all() -> [{group, supervised_services}].
+all() -> [{group, supervised_services}, dsl_first_run].
 
 -spec groups() -> [test_group()].
 %% @doc
@@ -110,3 +110,71 @@ single_with_restart(_Config) ->
 %% @end
 tree_restart(_Config) ->
     true.
+
+-spec dsl_first_run(config()) -> true.
+%% @doc
+%%   A check that the random generation of programs works
+%%   properly.$
+%% @end
+dsl_first_run(_Config) ->
+    ct:log("Running..."),
+    Gen_Test = ?FORALL(Prog, gen_prog(),
+        begin
+           _NewProg = tree_processing:read_and_translate({ok, Prog}),
+           ok = uffda_dsl:run_program(Prog),
+           {{startup, Tree}, _} = Prog,
+           uffda_dsl:clean_up(Tree),
+           true
+        end),
+    true = proper:quickcheck(Gen_Test, ?PQ_NUM(30)).
+
+% @doc
+% Generates a valid program to be processed further.
+% @end
+gen_prog() ->
+    ?LET(Tree, ?SUCHTHAT(T, gen_tree_root(), uffda_dsl:unique_names(T)),
+        begin
+            Workers = uffda_dsl:extract_workers(Tree),
+            case Workers of
+                [] -> {{startup, Tree}, {actions, []}};
+                _ -> ?LET(Actions,
+                          list(tuple([union(Workers), gen_rwe()])),
+                          {{startup, Tree}, {actions, Actions}})
+            end
+        end).
+
+%% @doc
+%%  Root of a randomly generated tree.
+%% @end
+
+gen_tree_root() ->
+    tuple([node, gen_super(), list(tuple([leaf, gen_wos()]))]).
+
+%% @doc
+%% Makes a random choice between ending the tree or continuing it
+%% to fill it out.
+%% @end
+gen_tree() ->
+    Leaf = tuple([leaf, gen_wos()]),
+    Node = ?LAZY(tuple([node, gen_super(), list(gen_tree())])),
+    weighted_union([{20, Leaf}, {1, Node}]).
+
+%% @doc
+%% A worker or a supervisor.
+%% @end
+gen_wos() ->
+    union([{supervisor, gen_super()}, {worker, gen_worker()}]).
+
+%% @doc a supervisor description. @end
+gen_super() -> {atom(), ex_super, {}}.
+
+%% @doc a worker description. @end
+gen_worker() -> {atom(), ex_worker, gen_service_status()}.
+
+%% @doc potential statuses of the service reported by uffda. @end %%
+gen_service_status() ->
+    union([not_registered, registered, starting_up, restarting, slow_start, slow_restart, crashed, down, up]).
+
+%% @doc Available real world events for the service to go through. @end %%
+gen_rwe() ->
+    union([go_up, go_down]).
