@@ -35,13 +35,18 @@
 -callback deduce_proper_expected_status(Scenario_Instance :: tc_proper_scenario()) -> Expected_Status :: term().
 
 %% Behaviour callbacks used per scenario when validating against the model
--callback vivify_proper_scenario(Scenario :: tc_proper_scenario()) -> tc_proper_scenario_live_ref().
--callback translate_proper_scenario_dsl(tc_proper_scenario_dsl_desc()) -> tc_proper_scenario_live_desc().
--callback translate_proper_scenario_events(tc_proper_scenario_dsl_events()) -> tc_proper_scenario_live_events().
--callback generate_proper_observation(Test_Case_Instance :: tc_proper_test_case()) -> Observed_Status :: term().
+-callback vivify_proper_scenario           (Scenario :: tc_proper_scenario()) -> tc_proper_scenario_live_ref().
+-callback translate_proper_scenario_dsl    (tc_proper_scenario_dsl_desc())    -> tc_proper_scenario_live_desc().
+-callback translate_proper_scenario_events (tc_proper_scenario_dsl_events())  -> tc_proper_scenario_live_events().
+
+-callback generate_proper_observation(Live_Model_Ref     :: tc_proper_scenario_live_ref(),
+                                      Test_Case_Instance :: tc_proper_test_case())
+              -> Observed_Status :: term().
+
 -callback passed_proper_test_case(Case_Number     :: pos_integer(),
                                   Expected_Status :: tc_proper_scenario_dsl_status(),
-                                  Observed_Status :: tc_proper_scenario_live_status()) -> boolean().
+                                  Observed_Status :: tc_proper_scenario_live_status())
+              -> boolean().
 
 
 %%-------------------------------------------------------------------
@@ -109,7 +114,7 @@ generate_observed_case(Module,
                                             observed_status=?TC_MISSING_TEST_CASE_ELEMENT} = Unexecuted_Test_Case)
   when is_integer(Case_Number), Case_Number > 0 ->
     Live_Model_Ref = Module:vivify_proper_scenario(Scenario_Dsl),
-    Observation = Module:generate_proper_observation(Module, Unexecuted_Test_Case),
+    Observation = Module:generate_proper_observation(Live_Model_Ref, Unexecuted_Test_Case),
     #tc_proper_test_case{observed_status=Observation}.
 
 -spec passed_test_case(module(), Observed_Test_Case :: tc_proper_test_case())
