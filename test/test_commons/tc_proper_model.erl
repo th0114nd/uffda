@@ -30,7 +30,7 @@
 -include("tc_proper_model.hrl").
 
 %% Behaviour callbacks for generating a tc_proper_model and expected outcomes
--callback test_model_ids() -> [{Model_Id :: tc_proper_model_id(), Source :: tc_proper_model_source()}].
+-callback get_all_test_model_ids() -> [{Model_Id :: tc_proper_model_id(), Source :: tc_proper_model_source()}].
 -callback generate_proper_model(Model_Id :: tc_proper_model_id(), Source :: tc_proper_model_source()) -> tc_proper_model().
 -callback deduce_proper_expected_status(Scenario_Instance :: tc_proper_scenario()) -> Expected_Status :: term().
 
@@ -53,7 +53,7 @@ test_all_models(Module) ->
     [begin
          Test_Model = Module:generate_proper_model(Model_Id, Source),
          {Model_Id, verify_all_scenarios(Test_Model)}
-     end || {Model_Id, Source} <- Module:test_model_ids()].
+     end || {Model_Id, Source} <- Module:get_all_test_model_ids()].
 
 -spec verify_all_scenarios(Test_Model :: tc_proper_model()) -> tc_proper_model_result().
 %% @doc
