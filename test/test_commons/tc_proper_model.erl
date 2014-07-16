@@ -46,7 +46,7 @@ verify_all_scenarios(#tc_proper_model{behaviour=Module, scenarios=Scenarios}) ->
                           {Boolean_Result, Success_Case_Count, Failures}) when Case_Number > 0 ->
                         try
                             Test_Case     = generate_test_case     (Module, Scenario_Instance),
-                            Observed_Case = generate_observed_case (Module, Scenario_Instance),
+                            Observed_Case = generate_observed_case (Module, Test_Case),
                             case passed_test_case(Module, Observed_Case) of
                                 %% Errors should not be possible as we have filled in Observed_Case properly.
                                 {ok, true}  -> {Boolean_Result, Success_Case_Count+1, Failures};
@@ -83,7 +83,10 @@ generate_test_case(Module, #tc_proper_scenario{instance=Case_Number} = Scenario_
 %%   the events to the scenario and then retrieve the observed status. This function
 %%   returns an instance of an observed test case that can be validated later.
 %% @end
-generate_observed_case(Module, #tc_proper_test_case{observed_status=undefined} = Unexecuted_Test_Case) ->
+generate_observed_case(Module,
+                       #tc_proper_test_case{scenario=#tc_proper_scenario{instance=Case_Number},
+                                            observed_status=?TC_MISSING_TEST_CASE_ELEMENT} = Unexecuted_Test_Case)
+  when is_integer(Case_Number), Case_Number > 0 ->
     Observation = Module:generate_observation(Module, Unexecuted_Test_Case),
     #tc_proper_test_case{observed_status=Observation}.
 
@@ -100,5 +103,6 @@ passed_test_case(_Module, #tc_proper_test_case{expected_status=?TC_MISSING_TEST_
     {error, {expected_status_not_generated, Observed_Test_Case}};
 passed_test_case(_Module, #tc_proper_test_case{observed_status=?TC_MISSING_TEST_CASE_ELEMENT} = Observed_Test_Case) ->
     {error, {observed_status_not_generated, Observed_Test_Case}};
-passed_test_case( Module, #tc_proper_test_case{} = Observed_Test_Case) ->
+passed_test_case( Module, #tc_proper_test_case{scenario=#tc_proper_scenario{instance=Case_Number}} = Observed_Test_Case)
+  when is_integer(Case_Number), Case_Number > 0 ->
     Module:passed_test_case(Observed_Test_Case).
