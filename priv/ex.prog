@@ -1,7 +1,8 @@
 {node, {supervisor, {root, ex_super, {}}},
         [{leaf, {worker, {a, ex_worker, up}}},
          {leaf, {worker, {b, ex_worker, down}}},
-         {leaf, {worker, {c, ex_worker, crashed}}}]}.
+         {leaf, {worker, {c, ex_worker, crashed}}},
+         {leaf, {worker, {d, ex_worker, up}}}]}.
 {a, online}.
 {a, offline}.
 {b, online}.

@@ -3,7 +3,7 @@
 
 -spec start_link(atom(), any()) -> {ok, pid()}.
 start_link(Name, _Args) ->
-    Pid = spawn(fun() -> startup(Name, self()) end),
+    Pid = spawn_link(fun() -> startup(Name, self()) end),
     {ok, Pid}.
 
     
