@@ -145,7 +145,6 @@ gen_prog() ->
 %% @doc
 %%  Root of a randomly generated tree.
 %% @end
-
 gen_tree_root() ->
     tuple([node, gen_super(), list(tuple([leaf, gen_wos()]))]).
 
