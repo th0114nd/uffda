@@ -11,18 +11,18 @@ start_link(Enabled)
   when is_list(Enabled) ->
     supervisor:start_link({local, ?SUPER}, ?MODULE, Enabled).
 
--spec init(Include_Testing :: boolean()) -> {ok, {{supervisor:strategy(), non_neg_integer(), non_neg_integer()},
+-spec init(Enabled :: [atom()]) -> {ok, {{supervisor:strategy(), non_neg_integer(), non_neg_integer()},
                                                   [supervisor:child_specs()]}}.
 init(Enabled) 
   when is_list(Enabled) ->
     Procs = [?MODULE:Enable() || Enable <- Enabled],
     {ok, {{one_for_one, 10, 10}, Procs}}.
 
--spec service_registry() -> supervisor:childspec().
+-spec service_registry() -> supervisor:child_spec().
 service_registry() ->
     ?CHILD(uffda_registry_sup, []).
 
--spec prog_tree_test() -> supervisor:childspec().
+-spec prog_tree_test() -> supervisor:child_spec().
 prog_tree_test() ->
     {?MODULE, {?MODULE, run_prog, []}, transient, 2000, worker, [?MODULE]}.
 
@@ -33,5 +33,5 @@ run_prog() ->
             uffda_dsl:run_program(Prog),
             receive
                 not_really_sent -> ok
-            end 
+            end
         end)}.

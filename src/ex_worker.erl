@@ -31,6 +31,7 @@ service_loop(Name) ->
         unregister -> uffda_client:unregister_service(Name);
         online    -> uffda_client:set_service_online(Name);
         offline  -> uffda_client:set_service_offline(Name);
-        {state, Pid} -> Pid ! uffda_client:service_status(Name)
+        {state, Pid} -> Pid ! uffda_client:service_status(Name);
+        quit -> exit(normal)
     end,
     service_loop(Name).

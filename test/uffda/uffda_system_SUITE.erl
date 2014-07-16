@@ -120,11 +120,13 @@ dsl_first_run(_Config) ->
     ct:log("Running..."),
     Gen_Test = ?FORALL(Prog, gen_prog(),
         begin
-           NewProg = tree_processing:read_and_translate({ok, Prog}),
-           %ok = uffda_dsl:run_program(Prog),
+           _NewProg = tree_processing:read_and_translate({ok, Prog}),
+           ok = uffda_dsl:run_program(Prog),
+           {{startup, Tree}, _} = Prog,
+           uffda_dsl:clean_up(Tree),
            true
         end),
-    true = proper:quickcheck(Gen_Test, ?PQ_NUM(10)).
+    true = proper:quickcheck(Gen_Test, ?PQ_NUM(30)).
 
 % @doc
 % Generates a valid program to be processed further.
@@ -146,7 +148,7 @@ gen_prog() ->
 %% @end
 
 gen_tree_root() ->
-    tuple([node, gen_super(), list(gen_tree())]).
+    tuple([node, gen_super(), list(tuple([leaf, gen_wos()]))]).
 
 %% @doc
 %% Makes a random choice between ending the tree or continuing it
@@ -175,4 +177,4 @@ gen_service_status() ->
 
 %% @doc Available real world events for the service to go through. @end %%
 gen_rwe() ->
-    union([go_up, go_down, crash, unregister]).
+    union([go_up, go_down]).

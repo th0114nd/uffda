@@ -1,4 +1,4 @@
-{node, {supervisor, {root, ex_super, {}}},
+{node, {root, ex_super, {}},
         [{leaf, {worker, {a, ex_worker, up}}},
          {leaf, {worker, {b, ex_worker, down}}},
          {leaf, {worker, {c, ex_worker, crashed}}},
