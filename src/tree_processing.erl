@@ -1,8 +1,8 @@
 -module(tree_processing).
--export([read_and_translate/1]).
+-export([deduce_proper_expected_status/1]).
 
 %% Extracts supervision tree and events list from uffda_dsl:parse_from_file.
-read_and_translate(FileRead) ->
+deduce_proper_expected_status(FileRead) ->
     {ok, {{startup, Tree}, {actions, Events}}} = FileRead,
     translate_tree({Tree, Events}).
 

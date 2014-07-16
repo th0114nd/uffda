@@ -1,5 +1,8 @@
 PROJECT = uffda
 
+DEPS = cowboy
+dep_cowboy = https://github.com/extend/cowboy.git 0.9.0
+
 TEST_DEPS = proper
 dep_proper = https://github.com/manopapad/proper v1.1
 
