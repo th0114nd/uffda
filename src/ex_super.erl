@@ -5,7 +5,6 @@
 
 -spec start_link(atom()) -> {ok, pid()}.
 start_link(Name) ->
-    ct:log("Registered: ~p", [registered()]),
     supervisor:start_link({local, Name}, ?MODULE, {}).
     
 -spec init({}) -> {ok, {{supervisor:strategy(), non_neg_integer(),non_neg_integer()},

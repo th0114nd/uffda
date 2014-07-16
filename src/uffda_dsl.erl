@@ -50,12 +50,9 @@ execute_all(Actions) -> lists:foreach(fun({Worker, Event}) -> Worker ! Event end
 %% @end
 -spec create_sup_tree(sup_tree_spec()) -> {ok, pid()}.
 create_sup_tree({node, Parent, Children}) ->
-    ct:log("Parent:~p", [Parent]),
     {Name, ex_super, Args} = Parent,
-    ct:log("Name: ~p Mod: ~p Args ~p~n", [Name, ex_super, Args]),
     {ok, Sup_Ref} = ex_super:start_link(Name),
     Child_Specs = [create_child_spec(Child) || {leaf, Child} <- Children],
-    ct:log("Child_specs: ~p", [Child_Specs]),
     _ = [{ok, _} = supervisor:start_child(Sup_Ref, CS) || CS <- Child_Specs],
     ok;
 create_sup_tree({leaf, Wos}) ->
@@ -103,10 +100,7 @@ extract_workers({node, _, Children}) ->
 %% @end 
 extract_names({leaf, {_, {Name, _, _}}}) -> [Name];
 extract_names({node, {Name, _, _}, Children}) ->
-    [Name | lists:append([extract_names(Child) || Child <- Children])];
-extract_names(Other) ->
-    ct:log("found other: ~p", [Other]),
-    [].
+    [Name | lists:append([extract_names(Child) || Child <- Children])].
    
 %% @doc
 %% Asserts that there are no repeated names in the specification tree.

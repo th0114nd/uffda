@@ -117,7 +117,6 @@ tree_restart(_Config) ->
 %%   properly.$
 %% @end
 dsl_first_run(_Config) ->
-    ct:log("Running..."),
     Gen_Test = ?FORALL(Prog, gen_prog(),
         begin
            _NewProg = tree_processing:read_and_translate({ok, Prog}),
