@@ -33,6 +33,7 @@ relxrun: release
 images: doc
 	mkdir -p doc/images
 	dot -Tpng doc/states.dot -o doc/images/states.png
+	dot -Tpng doc/tc_proper_model_behaviour.dot -o doc/images/tc_proper_model_behaviour.png
 
 release: clean-release all
 	relx -o rel/$(PROJECT)

@@ -212,21 +212,6 @@ verify_register_unregister(_Config) ->
     true.
 
 -type ascii() :: integer(32..127).
-%% prop_register_unregister() ->
-%%     NCs = ?FORALL(NameList, list(list(range(32, 127))), 
-%%             ?IMPLIES((10 < length(NameList)) and (length(NameList) < 200),
-%%               %% Ensure that synchronous messaging doesn't block.
-%%               ?TIMEOUT(5000,
-%%                   begin
-%%                       UniqueNameList = [list_to_atom(N) 
-%%                                         || N <- ordsets:to_list(ordsets:from_list(NameList))],
-%%                       %% ?WHENFAIL(
-%%                          ct:log("UNL: ~p~n", [UniqueNameList]),
-%%                                %% ), 
-%%                         balance_check(UniqueNameList, ordsets:new(), [])
-%%                           %% )
-%%                   end))),
-%%     proper:quickcheck(NCs, ?PQ_NUM(3)).
 
 %% @private
 balance_check([], _Reg, UnReg) ->
