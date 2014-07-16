@@ -117,9 +117,51 @@ tree_restart(_Config) ->
 %%   properly. 
 %% @end
 dsl_first_run(_Config) ->
-    Gen_Test = ?FORALL(Prog, uffda_dsl:program(), 
-        begin
-            ct:log("Program: ~p", [Prog]),
-            true
-        end),
-    true = proper:quickcheck(Gen_Test, ?PQ_NUM(10)).
+    Gen_Test = ?FORALL(Prog, ?LET(P, integer(), P), begin ct:log("P: ~p", [Prog]), true end),
+%        begin
+%            ct:log("Prog: ~p", [Prog]),
+%            true
+%        end),
+%%        begin
+%            Workers = uffda_dsl:extract_workers(Tree),
+%            ?IMPLIES(length(Workers) == length(sets:to_list(sets:from_list(Workers))),
+%                begin
+%                ct:log("Workers: ~p", [Workers]),
+%                ?FORALL(NumActions, list({range(1, length(Workers), uffda_dsl:real_world_event()}),
+%                begin
+%                    ct:log("Length NA: ~p", [length(NumActions)]),
+%                    ?IMPLIES(lists:all(fun({N, _}) -> (1 =< N) and (N =< length(Workers)) end, NumActions),
+%                        begin
+%                            Actions = lists:map(fun({N, E}) -> {lists:nth(N, Workers), E} end, 
+%                                NumActions),
+%                            Prog = {{startup, Tree}, {actions, Actions}},
+%                            ct:log("Prog: ~p", [Prog]),
+%                            true
+%                        end)
+%                 end)
+%           end)
+%        end) end),
+    true = proper:quickcheck(Gen_Test, ?PQ_NUM(100)).
+
+%gen_naive_prog() ->
+%    {{startup, union(
+%gen_prog() ->
+%    ?LET(Prog, integer(), Prog).
+%%        begin
+%%            Workers = uffda_dsl:extract_workers(Tree),
+%%            ?LET(Actions, list({union(Workers), uffda_dsl:real_world_event()}),
+%%                begin
+%%                    {{startup, Tree}, {actions, Actions}}
+%%                end) end).
+%            
+%fake_prog() ->
+%    {{startup, fake_tree()}, {actions, fake_actions()}}.
+%    
+%fake_tree() ->
+%    union({leaf, fake_wos()}, {node, fake_super(), [fake_tree()]}).
+%    
+%fake_wos() ->
+%    union({supervisor, fake_super()}, {worker, fake_worker()}).
+%    
+%fake_super() ->
+%     
