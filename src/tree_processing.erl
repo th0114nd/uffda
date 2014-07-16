@@ -17,7 +17,8 @@ state_change(killed, _) -> killed;
 state_change(State, _) -> State.
 
 %% Applies state_change to leaf node or evaluates subtree.
--spec transition(uffda_dsl:program()) -> uffda_dsl:program() | ok.
+-spec transition(uffda_dsl:program()) -> uffda_dsl:program().
+transition({{leaf, {supervisor, _}}, _} = Prog) -> Prog;
 transition({{leaf, Leaf}, Events}) ->
     {worker, {Name, ex_worker, Status}} = Leaf,
     Actions = proplists:get_all_values(Name, Events),
@@ -25,10 +26,12 @@ transition({{leaf, Leaf}, Events}) ->
                 Status, Actions),
     {leaf, {worker, {Name, ex_worker, FinalState}}};
 transition({{node, Parent, Children}, Events}) ->
-    translate_tree({{node, Parent, Children}, Events}).
+    translate_tree({{node, Parent, Children}, Events});
+transition(Invalid) ->
+    ct:log("Invalid: ~p", [Invalid]).
 
 %% Evaluates Events for immediate children of the root of Tree.
--spec translate_tree(uffda_dsl:program()) -> uffda_dsl:program() | ok.
+-spec translate_tree(uffda_dsl:program()) -> uffda_dsl:program().
 translate_tree({Tree, Events}) -> 
     {node, Parent, Children} = Tree,
     NewTree = {node, Parent, lists:map(fun(Child) -> transition({Child, Events}) end, Children)},

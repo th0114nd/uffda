@@ -211,7 +211,8 @@ proper_sanity(_Config) ->
     true = proper:quickcheck(Test_Down_Init, ?PQ_NUM(10)),
     ok.
 
--type transition() :: set_service_online | set_service_offline.
+transition() ->
+    union([set_service_online, set_service_offline]).
 -spec proper_state_sequence(term()) -> ok.
 %% @doc
 %%   Verify that 2 transitions don't cause a problem.
@@ -222,7 +223,7 @@ proper_state_sequence(_Config) ->
     uffda_client:starting_service('foo', self()),
     uffda_client:set_service_online('foo'), 
     Up_Down_Seq =
-        ?FORALL([T1, T2], [transition(), transition()],
+        ?FORALL({T1, T2}, tuple([transition(), transition()]),
           ?TIMEOUT(50, 
             begin      
                ok = erlang:apply(uffda_client, T1, ['foo']),
@@ -238,7 +239,9 @@ proper_state_sequence(_Config) ->
     true = proper:quickcheck(Up_Down_Seq, ?PQ_NUM(10)),
     ok.
 
--type more_trans() :: starting_service | transition().
+more_trans() ->
+    union([starting_service, transition()]).
+
 -spec proper_random_seq(term()) -> ok.
 %% @doc
 %%   Verify that any sequence of transitions reflect the correct final state.
@@ -270,12 +273,13 @@ proper_random_seq(_Config) ->
     true = proper:quickcheck(Rand_Seq, ?PQ_NUM(10)),
     ok.
 
--type valid_event() :: unregister_service | register_service| more_trans().
+valid_events() ->
+    union([unregister_service, register_service, more_trans()]).
 proper_valid_events(_Config) ->
-    ct:log("Testing that any set of valid evens won't crash FSM"),
+    ct:log("Testing that any set of valid events won't crash FSM"),
     uffda_client:register_service(foo),
     Valid_Events = 
-        ?FORALL(Event, valid_event(),
+        ?FORALL(Event, valid_events(),
             ?WHENFAIL(ct:log("~p", Event), 
                 begin
                     Result = case Event of

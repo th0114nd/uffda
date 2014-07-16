@@ -114,54 +114,65 @@ tree_restart(_Config) ->
 -spec dsl_first_run(config()) -> true.
 %% @doc
 %%   A check that the random generation of programs works
-%%   properly. 
+%%   properly.$
 %% @end
 dsl_first_run(_Config) ->
-    Gen_Test = ?FORALL(Prog, ?LET(P, integer(), P), begin ct:log("P: ~p", [Prog]), true end),
-%        begin
-%            ct:log("Prog: ~p", [Prog]),
-%            true
-%        end),
-%%        begin
-%            Workers = uffda_dsl:extract_workers(Tree),
-%            ?IMPLIES(length(Workers) == length(sets:to_list(sets:from_list(Workers))),
-%                begin
-%                ct:log("Workers: ~p", [Workers]),
-%                ?FORALL(NumActions, list({range(1, length(Workers), uffda_dsl:real_world_event()}),
-%                begin
-%                    ct:log("Length NA: ~p", [length(NumActions)]),
-%                    ?IMPLIES(lists:all(fun({N, _}) -> (1 =< N) and (N =< length(Workers)) end, NumActions),
-%                        begin
-%                            Actions = lists:map(fun({N, E}) -> {lists:nth(N, Workers), E} end, 
-%                                NumActions),
-%                            Prog = {{startup, Tree}, {actions, Actions}},
-%                            ct:log("Prog: ~p", [Prog]),
-%                            true
-%                        end)
-%                 end)
-%           end)
-%        end) end),
-    true = proper:quickcheck(Gen_Test, ?PQ_NUM(100)).
+    ct:log("Running..."),
+    Gen_Test = ?FORALL(Prog, gen_prog(),
+        begin
+           NewProg = tree_processing:read_and_translate({ok, Prog}),
+           %ok = uffda_dsl:run_program(Prog),
+           true
+        end),
+    true = proper:quickcheck(Gen_Test, ?PQ_NUM(10)).
 
-%gen_naive_prog() ->
-%    {{startup, union(
-%gen_prog() ->
-%    ?LET(Prog, integer(), Prog).
-%%        begin
-%%            Workers = uffda_dsl:extract_workers(Tree),
-%%            ?LET(Actions, list({union(Workers), uffda_dsl:real_world_event()}),
-%%                begin
-%%                    {{startup, Tree}, {actions, Actions}}
-%%                end) end).
-%            
-%fake_prog() ->
-%    {{startup, fake_tree()}, {actions, fake_actions()}}.
-%    
-%fake_tree() ->
-%    union({leaf, fake_wos()}, {node, fake_super(), [fake_tree()]}).
-%    
-%fake_wos() ->
-%    union({supervisor, fake_super()}, {worker, fake_worker()}).
-%    
-%fake_super() ->
-%     
+% @doc
+% Generates a valid program to be processed further.
+% @end
+gen_prog() ->
+    ?LET(Tree, ?SUCHTHAT(T, gen_tree_root(), uffda_dsl:unique_names(T)),
+        begin
+            Workers = uffda_dsl:extract_workers(Tree),
+            case Workers of
+                [] -> {{startup, Tree}, {actions, []}};
+                _ -> ?LET(Actions,
+                          list(tuple([union(Workers), gen_rwe()])),
+                          {{startup, Tree}, {actions, Actions}})
+            end
+        end).
+
+%% @doc
+%%  Root of a randomly generated tree.
+%% @end
+
+gen_tree_root() ->
+    tuple([node, gen_super(), list(gen_tree())]).
+
+%% @doc
+%% Makes a random choice between ending the tree or continuing it
+%% to fill it out.
+%% @end
+gen_tree() ->
+    Leaf = tuple([leaf, gen_wos()]),
+    Node = ?LAZY(tuple([node, gen_super(), list(gen_tree())])),
+    weighted_union([{20, Leaf}, {1, Node}]).
+
+%% @doc
+%% A worker or a supervisor.
+%% @end
+gen_wos() ->
+    union([{supervisor, gen_super()}, {worker, gen_worker()}]).
+
+%% @doc a supervisor description. @end
+gen_super() -> {atom(), ex_super, {}}.
+
+%% @doc a worker description. @end
+gen_worker() -> {atom(), ex_worker, gen_service_status()}.
+
+%% @doc potential statuses of the service reported by uffda. @end %%
+gen_service_status() ->
+    union([not_registered, registered, starting_up, restarting, slow_start, slow_restart, crashed, down, up]).
+
+%% @doc Available real world events for the service to go through. @end %%
+gen_rwe() ->
+    union([go_up, go_down, crash, unregister]).
