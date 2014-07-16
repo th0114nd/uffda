@@ -1,8 +1,8 @@
 -module(tree_processing).
--export([deduce_proper_expected_status/1]).
+-export([extract_tree_and_events/1]).
 
 %% Extracts supervision tree and events list from uffda_dsl:parse_from_file.
-deduce_proper_expected_status(FileRead) ->
+extract_tree_and_events(FileRead) ->
     {ok, {{startup, Tree}, {actions, Events}}} = FileRead,
     translate_tree({Tree, Events}).
 
@@ -18,12 +18,12 @@ state_change(State, _) -> State.
 
 %% Applies state_change to leaf node or evaluates subtree.
 -spec transition(uffda_dsl:program()) -> uffda_dsl:program().
-transition({{leaf, Leaf}, Events}) ->
-    {worker, {Name, ex_worker, Status}} = Leaf,
+transition({{leaf, {worker, Name, _, Status}}, Events}) ->
     Actions = proplists:get_all_values(Name, Events),
     FinalState = lists:foldl(fun(Event, Acc) -> state_change(Acc, Event) end,
                 Status, Actions),
     {leaf, {worker, {Name, ex_worker, FinalState}}};
+transition({{leaf, {supervisor, _}}, _} = Program) -> Program;
 transition({{node, Parent, Children}, Events}) ->
     translate_tree({{node, Parent, Children}, Events}).
 
