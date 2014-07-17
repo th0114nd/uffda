@@ -56,9 +56,16 @@
 -spec test_all_models(module()) -> [{tc_proper_model_id(), tc_proper_model_result()}].
 test_all_models(Module) ->
     [begin
-         Test_Model = Module:generate_proper_model(Model_Id, Source),
+         Test_Model = generate_proper_model(Model_Id, Source),
          {Model_Id, verify_all_scenarios(Test_Model)}
      end || {Model_Id, Source} <- Module:get_all_test_model_ids()].
+
+generate_proper_model(Model_Id, {file, Full_Name} = Source) ->
+    {ok, Scenarios} = file:consult(Full_Name),
+    #tc_proper_model{id=Model_Id, source=Source, behaviour=?MODULE, scenarios=Scenarios};
+generate_proper_model(Model_Id, {mfa, {Module, Function, Args}}) ->
+    apply(Module, Function, [Model_Id | Args]).
+    
 
 -spec verify_all_scenarios(Test_Model :: tc_proper_model()) -> tc_proper_model_result().
 %% @doc
