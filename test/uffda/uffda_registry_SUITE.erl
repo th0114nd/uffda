@@ -50,7 +50,7 @@
 %% @end
 all() -> [{group, verify_registry}].
 
--spec groups() -> [test_group()].
+-spec groups() -> [{atom(), [atom()], [{atom(), atom()}]}].
 %% @doc
 %%   Testcases are grouped so that a failure can save time.
 %% @end
@@ -210,31 +210,3 @@ verify_register_unregister(_Config) ->
 %%    true = prop_register_unregister(),
     ct:comment("Tested that registering maintains the available names properly."),
     true.
-
--type ascii() :: integer(32..127).
-
-%% @private
-balance_check([], _Reg, UnReg) ->
-    [ok = uffda_client:unregister_service(Un) || Un <- UnReg],
-    true;
-balance_check([H|T], Reg, UnReg) ->
-    case random:uniform(3) of
-        1 -> ok = uffda_client:register_service(H),
-             NewReg = ordsets:add_element(H, Reg),
-             true = ordsets:is_element(H, NewReg),
-             true = ordsets:is_subset(Reg, NewReg),
-             Registered_Actual = uffda_client:which_services(),
-             NewReg = ordsets:from_list(Registered_Actual),
-             balance_check(T, NewReg, [H | UnReg]);
-        2 when UnReg /= [] -> Index = random:uniform(length(UnReg)),
-             Service = lists:nth(Index, UnReg),
-             NewUnReg = lists:delete(Service, UnReg),
-             NewReg = ordsets:del_element(Service, Reg),
-             ok = uffda_client:unregister_service(Service),
-             Registered_Actual = uffda_client:which_services(),
-             NewReg = ordsets:from_list(Registered_Actual),
-             balance_check([H|T], NewReg, NewUnReg);
-        2 -> balance_check([H|T], Reg, UnReg);
-        3 -> ct:sleep(10), 
-             balance_check([H|T], Reg, UnReg)
-    end.

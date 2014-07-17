@@ -77,7 +77,7 @@ register_service(Service_Name)
 %%
 %%   <table>
 %%   <tr><th>Option</th><th>Meaning</th></tr>
-%%   <tr><td>stimeout</td><td>Timeout in millis before starting/restarting is considered too slow.</td></tr>
+%%   <tr><td>max_startup_millis</td><td>Timeout in millis before starting/restarting is considered too slow.</td></tr>
 %%   </table>
 %% @end
 

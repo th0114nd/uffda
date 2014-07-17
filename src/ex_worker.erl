@@ -14,7 +14,7 @@ start_link(Name, _Args) ->
 %% @end
 startup(Name, Caller) ->
     true = register(Name, self()),
-    uffda_client:register_service(Name),
+    ok = uffda_client:register_service(Name),
     Caller ! {ok, Name},
     ok = uffda_client:starting_service(Name, self()),
     service_loop(Name).

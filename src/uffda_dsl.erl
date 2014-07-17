@@ -2,11 +2,11 @@
 -export([parse_from_file/1, run_program/1, create_sup_tree/1, extract_workers/1, unique_names/1]).
 -export([clean_up/1]).
 -export([create_child_spec/1]).
--export_type([program/0, sup_tree_spec/0]).
+-export_type([program/0, sup_tree_spec/0, action/0]).
 -include("uffda.hrl").
 
 -type program() :: {{startup, sup_tree_spec()}, {actions, [action()]}}.
--type sup_tree_spec() :: union({leaf, wos()}, {node, super_desc(), [sup_tree_spec()]}).
+-type sup_tree_spec() :: {leaf, wos()} | {node, super_desc(), [sup_tree_spec()]}.
 -type wos() :: {worker, worker_desc()} | {supervisor, super_desc()}.
 
 % In general, {Name, Module, Args}
@@ -48,9 +48,9 @@ execute_all(Actions) -> lists:foreach(fun({Worker, Event}) -> Worker ! Event end
 %% Creates a supervision tree according to the hierarchy specified in the
 %% specification.
 %% @end
--spec create_sup_tree(sup_tree_spec()) -> {ok, pid()}.
+-spec create_sup_tree(sup_tree_spec()) -> ok.
 create_sup_tree({node, Parent, Children}) ->
-    {Name, ex_super, Args} = Parent,
+    {Name, ex_super, _Args} = Parent,
     {ok, Sup_Ref} = ex_super:start_link(Name),
     Child_Specs = [create_child_spec(Child) || {leaf, Child} <- Children],
     _ = [{ok, _} = supervisor:start_child(Sup_Ref, CS) || CS <- Child_Specs],
@@ -60,7 +60,8 @@ create_sup_tree({leaf, Wos}) ->
     case Wos of
         {super, {Name, Module, Args}} -> Module:start_link(Name, Args);
         {worker, {Name, Module, Start_State}} -> Module:start_link(Name, [Start_State])
-    end.
+    end,
+    ok.
 
 -spec create_child_spec(wos()) -> supervisor:child_spec().
 create_child_spec({worker, W}) -> create_worker_child_spec(W);
@@ -114,11 +115,14 @@ unique_names(Tree) ->
 %% Cleans up the tree from the name and removes all processes.
 %% @end
 -spec clean_up(sup_tree_spec()) -> ok.
-clean_up({leaf, {worker, {Name, _, _}}}) -> uffda_client:unregister_service(Name),
-                                            Name ! quit;
+clean_up({leaf, {worker, {Name, _, _}}}) -> ok = uffda_client:unregister_service(Name),
+                                            Name ! quit,
+                                            ok;
 clean_up({leaf, {supervisor, {Name, _, _}}}) -> Pid = whereis(Name),
-                                                exit(Pid, normal);
+                                                exit(Pid, normal),
+                                                ok;
 clean_up({node, {Name, _, _}, Children}) ->
     _ = [clean_up(Child) || Child <- Children],
     Pid = whereis(Name),
-    exit(Pid, normal).
+    exit(Pid, normal),
+    ok.

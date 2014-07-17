@@ -1,5 +1,8 @@
 PROJECT = uffda
 
+DEPS = cowboy
+dep_cowboy = https://github.com/extend/cowboy.git 0.9.0
+
 TEST_DEPS = proper
 dep_proper = https://github.com/manopapad/proper v1.1
 
@@ -10,6 +13,8 @@ CT_SUITES := uffda_registry uffda_service uffda_system
 DIALYZER_OPTS := test/uffda -Werror_handling -Wrace_conditions -Wunmatched_returns
 EDOC_OPTS := {preprocess, true}, {source_path, ["src", "examples", "test/uffda"]}, nopackages, {subpackages, true}
 
+COMPILE_FIRST := ../test/test_commons/tc_proper_model
+#TEST_ERLC_OPTS := -pa test -pa deps/*/ebin -pa ebin
 DEV_SERVER := erl -pa test -pa deps/*/ebin -pa ebin -smp enable -setcookie CISFORCOOKIE
 RUN_SERVER := erl -pa deps/*/ebin -pa ebin -smp enable -setcookie CISFORCOOKIE
 HOST := `hostname` 

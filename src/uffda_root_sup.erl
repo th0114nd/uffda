@@ -2,7 +2,7 @@
 -behavior(supervisor).
 
 -export([start_link/1, init/1, run_prog/0]).
--export([service_registry/0, prog_tree_test/0]).
+-export([service_registry/0, prog_tree_test/0, rest_api/0]).
 -define(SUPER, ?MODULE).
 -define(CHILD(__Mod, __Args), {__Mod, {__Mod, start_link, __Args},
                                permanent, 2000, worker, [__Mod]}).
@@ -12,7 +12,7 @@ start_link(Enabled)
     supervisor:start_link({local, ?SUPER}, ?MODULE, Enabled).
 
 -spec init(Enabled :: [atom()]) -> {ok, {{supervisor:strategy(), non_neg_integer(), non_neg_integer()},
-                                                  [supervisor:child_specs()]}}.
+                                                  [supervisor:child_spec()]}}.
 init(Enabled) 
   when is_list(Enabled) ->
     Procs = [?MODULE:Enable() || Enable <- Enabled],
@@ -21,6 +21,10 @@ init(Enabled)
 -spec service_registry() -> supervisor:child_spec().
 service_registry() ->
     ?CHILD(uffda_registry_sup, []).
+
+-spec rest_api() -> supervisor:child_spec().
+rest_api() ->
+    ?CHILD(rest_api_sup, []).
 
 -spec prog_tree_test() -> supervisor:child_spec().
 prog_tree_test() ->

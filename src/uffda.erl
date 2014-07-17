@@ -46,7 +46,7 @@ stop() -> application:stop(?MODULE).
 %%   is not expected to be run as a distributed erlang application.
 %% @end
 -spec start(any(), any()) -> {ok, pid()}.
-start(_StartType, _StartArgs) -> uffda_root_sup:start_link([service_registry]).
+start(_StartType, _StartArgs) -> uffda_root_sup:start_link([service_registry, rest_api]).
 
 %% @doc
 %%   Stops the application in an OTP environment.
