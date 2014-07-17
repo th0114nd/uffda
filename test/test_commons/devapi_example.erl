@@ -26,7 +26,7 @@ generate_proper_model(Id, {file, Filename} = Source) ->
 
 -spec deduce_proper_expected_status(Scenario_Instance :: tc_proper_scenario()) -> Expected_Status :: term().
 deduce_proper_expected_status(#tc_proper_scenario{} = Scenario) ->
-    #tc_proper_scenario{instance=Inst, scenario_desc=Desc, initial_status=Init_Status, events=Events} = Scenario,
+    #tc_proper_scenario{instance=_Inst, scenario_desc=Desc, initial_status=Init_Status, events=Events} = Scenario,
     Expected_Status = try   deduce(Desc, Init_Status, Events)
                       catch Error:Type -> error_logger:error_msg("Caught ~p error in ~p:deduce/3 ~p",
                                                                  [{Error, Type}, ?MODULE, erlang:get_stacktrace()]),
@@ -35,7 +35,7 @@ deduce_proper_expected_status(#tc_proper_scenario{} = Scenario) ->
     #tc_proper_test_case{scenario=Scenario, expected_status=Expected_Status}.
 
 -spec vivify_proper_scenario(Scenario :: tc_proper_scenario()) -> tc_proper_scenario_live_ref().
-vivify_proper_scenario(#tc_proper_scenario{} = Scenario) ->
+vivify_proper_scenario(#tc_proper_scenario{} = _Scenario) ->
     devapi_tester.
 
 -spec translate_proper_scenario_dsl(tc_proper_scenario_dsl_desc()) -> tc_proper_scenario_live_desc().
@@ -53,7 +53,7 @@ generate_proper_observation(_Live_Model_Ref, #tc_proper_test_case{} = _Test_Case
 -spec passed_proper_test_case(Case_Number     :: pos_integer(),
                               Expected_Status :: tc_proper_scenario_dsl_status(),
                               Observed_Status :: tc_proper_scenario_live_status()) -> boolean().
-passed_proper_test_case(_Case_Number, Expected_Status, Observed_Status) ->
+passed_proper_test_case(_Case_Number, _Expected_Status, _Observed_Status) ->
     true.
 
 

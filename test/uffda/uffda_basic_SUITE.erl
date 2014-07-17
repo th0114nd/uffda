@@ -79,7 +79,7 @@ init_per_testcase(_TestCase, Config) ->
     ok = uffda:start(),
     Config.
 
--spec end_per_testcase(module(), config()) -> config().
+-spec end_per_testcase(module(), config()) -> ok.
 %% @doc
 %%   Cleanup after executing each testcase in this suite.
 %% @end
@@ -114,9 +114,9 @@ create_service(Name) -> spawn(?MODULE, startup, [Name, self()]).
 %%   Register and starting up actions for a local test service.
 %% @end
 startup(Name, Caller) ->
-    uffda_client:register_service(Name),
+    ok = uffda_client:register_service(Name),
     Caller ! {ok, Name},
-    uffda_client:starting_service(Name, self()),
+    ok = uffda_client:starting_service(Name, self()),
     service_loop(Name).
 
 -spec service_loop(atom()) -> term().
@@ -125,10 +125,10 @@ startup(Name, Caller) ->
 %%   Receive loop for local test service to induce service events.
 %% @end
 service_loop(Name) ->
-    receive
+    _ = receive
         die   -> exit(kill);
-        up    -> uffda_client:set_service_online(Name);
-        down  -> uffda_client:set_service_offline(Name);
+        up    -> ok = uffda_client:set_service_online(Name);
+        down  -> ok = uffda_client:set_service_offline(Name);
         {state, Pid} -> Pid ! uffda_client:service_status(Name)
     end,
     service_loop(Name).
@@ -219,9 +219,9 @@ transition() ->
 %% @end
 proper_state_sequence(_Config) ->
     ct:log("Testing states do not get confuddled given a random transition sequence."),
-    uffda_client:register_service('foo'),
-    uffda_client:starting_service('foo', self()),
-    uffda_client:set_service_online('foo'), 
+    ok = uffda_client:register_service('foo'),
+    ok = uffda_client:starting_service('foo', self()),
+    ok = uffda_client:set_service_online('foo'), 
     Up_Down_Seq =
         ?FORALL({T1, T2}, tuple([transition(), transition()]),
           ?TIMEOUT(50, 
@@ -248,9 +248,9 @@ more_trans() ->
 %% @end
 proper_random_seq(_Config) ->
     ct:log("Testing more complex transition sequences."),
-    uffda_client:register_service('foo'),
-    uffda_client:starting_service('foo', self()),
-    uffda_client:set_service_online('foo'),
+    ok = uffda_client:register_service('foo'),
+    ok = uffda_client:starting_service('foo', self()),
+    ok = uffda_client:set_service_online('foo'),
     Rand_Seq = ?FORALL(Transition_List, list(more_trans()),
         ?IMPLIES((length(Transition_List) < 20) and (length(Transition_List) > 0), begin
             New_State =
@@ -277,7 +277,7 @@ valid_events() ->
     union([unregister_service, register_service, more_trans()]).
 proper_valid_events(_Config) ->
     ct:log("Testing that any set of valid events won't crash FSM"),
-    uffda_client:register_service(foo),
+    ok = uffda_client:register_service(foo),
     Valid_Events = 
         ?FORALL(Event, valid_events(),
             ?WHENFAIL(ct:log("~p", Event), 
@@ -314,7 +314,7 @@ name_checks(_Config) ->
 
 %% @private
 balance_check([], _Reg, UnReg) ->
-    [ok = uffda_client:unregister_service(Un) || Un <- UnReg],
+    _ = [ok = uffda_client:unregister_service(Un) || Un <- UnReg],
     true;
 balance_check([H|T], Reg, UnReg) ->
     case random:uniform(3) of
@@ -348,7 +348,7 @@ name_sanity(_Config) ->
     Run = fun() -> [] = uffda_client:which_services(),
                    true = balance_check(Names, ordsets:new(), [])
                    end,
-    [Run() || _ <- lists:seq(1, 5)],
+    _ = [Run() || _ <- lists:seq(1, 5)],
     ct:comment("A basic check that state is properly cleaned up.").
 
 -spec proper_name_checks(term()) -> ok.
@@ -376,15 +376,16 @@ proper_timeout_test(_Config) ->
                          begin
                              create_sleepy_service(foo, Time),
                              Result = slow_start =:= uffda_client:service_status(foo),
-                             uffda_client:unregister_service(foo),
+                             ok =uffda_client:unregister_service(foo),
                              Result
                          end)),
     true = proper:quickcheck(Timeout, ?PQ_NUM(10)),
     ok.
 
+-spec create_sleepy_service(atom(), integer()) -> ok.
 create_sleepy_service(Name, Time) ->
-    uffda_client:register_service(Name, [{stimeout, 14}]),
-    uffda_client:starting_service(Name, self()),
+    ok = uffda_client:register_service(Name, [{max_startup_millis, 14}]),
+    ok = uffda_client:starting_service(Name, self()),
     ct:sleep(Time),
     ok.
  

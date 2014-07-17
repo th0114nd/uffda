@@ -34,7 +34,7 @@
 %% @end
 all() -> [{group, supervised_services}, dsl_first_run].
 
--spec groups() -> [test_group()].
+-spec groups() -> [{atom(), [atom()], [atom()]}].
 %% @doc
 %%   Testcases are grouped so that a failure can save time.
 %% @end
@@ -77,7 +77,7 @@ init_per_testcase(_TestCase, Config) ->
     ok = uffda:start(),
     Config.
 
--spec end_per_testcase(module(), config()) -> config().
+-spec end_per_testcase(module(), config()) -> ok.
 %% @doc
 %%   Cleanup after executing each testcase in this suite.
 %% @end
@@ -119,7 +119,7 @@ tree_restart(_Config) ->
 dsl_first_run(_Config) ->
     Gen_Test = ?FORALL(Prog, gen_prog(),
         begin
-           _NewProg = tree_processing:read_and_translate({ok, Prog}),
+           _NewProg = tree_processing:extract_tree_and_events({ok, Prog}),
            ok = uffda_dsl:run_program(Prog),
            {{startup, Tree}, _} = Prog,
            uffda_dsl:clean_up(Tree),

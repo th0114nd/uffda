@@ -1,8 +1,9 @@
 -module(tree_processing).
--export([read_and_translate/1]).
+-export([extract_tree_and_events/1]).
 
+-type not_program() :: {uffda_dsl:sup_tree_spec(), [uffda_dsl:action()]}.
 %% Extracts supervision tree and events list from uffda_dsl:parse_from_file.
-read_and_translate(FileRead) ->
+extract_tree_and_events(FileRead) ->
     {ok, {{startup, Tree}, {actions, Events}}} = FileRead,
     translate_tree({Tree, Events}).
 
@@ -17,7 +18,7 @@ state_change(killed, _) -> killed;
 state_change(State, _) -> State.
 
 %% Applies state_change to leaf node or evaluates subtree.
--spec transition(uffda_dsl:program()) -> uffda_dsl:program().
+-spec transition(not_program()) -> not_program().
 transition({{leaf, {supervisor, _}}, _} = Prog) -> Prog;
 transition({{leaf, Leaf}, Events}) ->
     {worker, {Name, ex_worker, Status}} = Leaf,
@@ -26,12 +27,10 @@ transition({{leaf, Leaf}, Events}) ->
                 Status, Actions),
     {leaf, {worker, {Name, ex_worker, FinalState}}};
 transition({{node, Parent, Children}, Events}) ->
-    translate_tree({{node, Parent, Children}, Events});
-transition(Invalid) ->
-    ct:log("Invalid: ~p", [Invalid]).
+    translate_tree({{node, Parent, Children}, Events}).
 
 %% Evaluates Events for immediate children of the root of Tree.
--spec translate_tree(uffda_dsl:program()) -> uffda_dsl:program().
+-spec translate_tree(not_program()) -> not_program().
 translate_tree({Tree, Events}) -> 
     {node, Parent, Children} = Tree,
     NewTree = {node, Parent, lists:map(fun(Child) -> transition({Child, Events}) end, Children)},
