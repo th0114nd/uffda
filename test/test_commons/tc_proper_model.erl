@@ -31,7 +31,7 @@
 
 %% Behaviour callbacks for generating a tc_proper_model and expected outcomes
 -callback get_all_test_model_ids() -> [{Model_Id :: tc_proper_model_id(), Source :: tc_proper_model_source()}].
--callback transform_raw_scenario(Raw_Scenario :: tc_proper_scenario()) -> Scenario :: tc_proper_scenario.
+-callback transform_raw_scenario(Idx :: pos_integer(), Raw_Scenario :: term()) -> Scenario :: tc_proper_scenario().
 -callback deduce_proper_expected_status(Scenario_Instance :: tc_proper_scenario()) -> Expected_Status :: term().
 
 %% Behaviour callbacks used per scenario when validating against the model
@@ -56,17 +56,20 @@
 -spec test_all_models(module()) -> [{tc_proper_model_id(), tc_proper_model_result()}].
 test_all_models(Module) ->
     [begin
-         Test_Model = generate_proper_model(Model_Id, Source),
+         Test_Model = generate_proper_model(Module, Model_Id, Source),
          {Model_Id, verify_all_scenarios(Test_Model)}
      end || {Model_Id, Source} <- Module:get_all_test_model_ids()].
 
-generate_proper_model(Model_Id, {file, Full_Name} = Source) ->
+-type mfargs() :: {atom(), atom(), [term()]}.
+-type model_input() :: {file, file:name_all()} | {mfa, mfargs()} | {function, fun(() -> tc_proper_model())}.
+-spec generate_proper_model(module(), tc_proper_model_id(), model_input()) -> tc_proper_model().
+generate_proper_model(CB_Module, Model_Id, {file, Full_Name} = Source) ->
     {ok, Raw_Scenarios} = file:consult(Full_Name),
-    Scenarios = [Module:transform_raw_scenario(Raw_Scenario) || Raw_Scenario <- Raw_Scenarios],
+    Scenarios = [CB_Module:transform_raw_scenario(Raw_Scenario) || Raw_Scenario <- Raw_Scenarios],
     #tc_proper_model{id=Model_Id, source=Source, behaviour=?MODULE, scenarios=Scenarios};
-generate_proper_model(Model_Id, {mfa, {Module, Function, Args}}) ->
+generate_proper_model(_CB_Module, Model_Id, {mfa, {Module, Function, Args}}) ->
     apply(Module, Function, [Model_Id | Args]);
-generate_proper_model(Model_Id, {function, Function})
+generate_proper_model(_CB_Module, _Model_Id, {function, Function})
   when is_function(Function, 0) ->
     Function().
     
@@ -90,8 +93,8 @@ verify_all_scenarios(#tc_proper_model{behaviour=Module, scenarios=Scenarios}) ->
                                 {ok, false} -> {false,          Success_Case_Count,   [Observed_Case | Failures]}
                             end
                         catch Error:Type ->
-                              %  error_logger:error_msg("Scenario instance ~p crashed with ~p~n  Stacktrace: ~p~n",
-                              %                         [Scenario_Instance, {Error, Type}, erlang:get_stacktrace()]),
+                                error_logger:error_msg("Scenario instance ~p crashed with ~p~n  Stacktrace: ~p~n",
+                                                       [Scenario_Instance, {Error, Type}, erlang:get_stacktrace()]),
                                 {false, Success_Case_Count, [Scenario_Instance | Failures]}
                         end
                 end, {true, 0, []}, Scenarios),
