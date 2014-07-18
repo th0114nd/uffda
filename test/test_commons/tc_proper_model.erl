@@ -31,7 +31,7 @@
 
 %% Behaviour callbacks for generating a tc_proper_model and expected outcomes
 -callback get_all_test_model_ids() -> [{Model_Id :: tc_proper_model_id(), Source :: tc_proper_model_source()}].
--callback generate_proper_model(Model_Id :: tc_proper_model_id(), Source :: tc_proper_model_source()) -> tc_proper_model().
+-callback transform_raw_scenario(Raw_Scenario :: tc_proper_scenario()) -> Scenario :: tc_proper_scenario.
 -callback deduce_proper_expected_status(Scenario_Instance :: tc_proper_scenario()) -> Expected_Status :: term().
 
 %% Behaviour callbacks used per scenario when validating against the model
@@ -61,10 +61,14 @@ test_all_models(Module) ->
      end || {Model_Id, Source} <- Module:get_all_test_model_ids()].
 
 generate_proper_model(Model_Id, {file, Full_Name} = Source) ->
-    {ok, Scenarios} = file:consult(Full_Name),
+    {ok, Raw_Scenarios} = file:consult(Full_Name),
+    Scenarios = [Module:transform_raw_scenario(Raw_Scenario) || Raw_Scenario <- Raw_Scenarios],
     #tc_proper_model{id=Model_Id, source=Source, behaviour=?MODULE, scenarios=Scenarios};
 generate_proper_model(Model_Id, {mfa, {Module, Function, Args}}) ->
-    apply(Module, Function, [Model_Id | Args]).
+    apply(Module, Function, [Model_Id | Args]);
+generate_proper_model(Model_Id, {function, Function})
+  when is_function(Function, 0) ->
+    Function().
     
 
 -spec verify_all_scenarios(Test_Model :: tc_proper_model()) -> tc_proper_model_result().
