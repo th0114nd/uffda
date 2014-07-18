@@ -37,12 +37,12 @@ generate_proper_model(Id, {file, Filename} = Source) ->
 -spec deduce_proper_expected_status(Scenario_Instance :: tc_proper_scenario()) -> Expected_Status :: term().
 deduce_proper_expected_status(#tc_proper_scenario{} = Scenario) ->
     #tc_proper_scenario{instance=_Inst, scenario_desc=Desc, initial_status=Init_Status, events=Events} = Scenario,
-    Expected_Status = try   deduce(Desc, Init_Status, Events)
-                      catch Error:Type -> error_logger:error_msg("Caught ~p error in ~p:deduce/3 ~p",
-                                                                 [{Error, Type}, ?MODULE, erlang:get_stacktrace()]),
-                                          failed
-                      end,
-    #tc_proper_test_case{scenario=Scenario, expected_status=Expected_Status}.
+    try   deduce(Desc, Init_Status, Events)
+    catch Error:Type -> error_logger:error_msg("Caught ~p error in ~p:deduce/3 ~p",
+                                               [{Error, Type}, ?MODULE, erlang:get_stacktrace()]),
+                        failed
+    end.
+    
 
 -spec vivify_proper_scenario(Scenario :: tc_proper_scenario()) -> tc_proper_scenario_live_ref().
 vivify_proper_scenario(#tc_proper_scenario{} = _Scenario) ->
@@ -79,22 +79,18 @@ passed_proper_test_case(_Case_Number, Expected_Status, Observed_Status) ->
 deduce(Name, [], Events = ?EVENTS) ->
     deduce_loop(Name, Events, ordsets:new()).
 
-deduce_loop(_Name, [], _Registered) -> [].
-deduce_loop(Name, [E | ES], Registered) ->
+deduce_loop(_Name, [], _Reg) -> [];
+deduce_loop(Name, [E | ES], Reg) ->
     case E of
-        register -> [case ordsets:member(Name, Registered) of
-                         false -> NewReg = ordsets:add_element(Name, Registered),
-                                  ok;
-                         true -> NewReg = Reg,
-                                 {error, already_started}
-                    end
-                    | deduce_loop(Name, ES, NewReg)];
-        unregister -> [case ordsets:member(Name, Registered) of
-                         true -> NewReg = ordsets:del_element(Name, Registered),
-                                 ok;
-                          false -> NewReg = Reg,
-                                   {error, reason}
-                       end
-                       | deduce_loop(Name, ES, NewReg)];
-        which_services -> [ordsets:to_list(Registered) | deduce_loop(Name, ES, Registered)]
+        register -> {NewReg, Expected} = case ordsets:is_element(Name, Reg) of
+                         false -> {ordsets:add_element(Name, Reg), ok};
+                         true -> {Reg, {error, already_started}}
+                    end,
+                    [Expected | deduce_loop(Name, ES, NewReg)];
+        unregister -> {NewReg, Expected} = case ordsets:is_element(Name, Reg) of
+                          true -> {ordsets:del_element(Name, Reg), ok};
+                          false -> {Reg, {error, reason}}
+                       end,
+                       [Expected | deduce_loop(Name, ES, NewReg)];
+        which_services -> [ordsets:to_list(Reg) | deduce_loop(Name, ES, Reg)]
     end.

@@ -163,7 +163,10 @@ verify_register_service_name(_Config) ->
 
 prop_register_simple_name() ->
     ok = uffda:start(),
-    try register_one_name(alpha)
+    try Model_Result_Pairs = tc_proper_model:test_all_models(uffda_register_name_model),
+        Results = [Res || {_Id, Res} <- Model_Result_Pairs],
+        lists:all(fun({Passed, _Num_Passed, _Failures}) -> Passed end, Results)
+    %try register_one_name(alpha)
     after ok = uffda:stop()
     end.
 

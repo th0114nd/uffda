@@ -79,8 +79,8 @@ verify_all_scenarios(#tc_proper_model{behaviour=Module, scenarios=Scenarios}) ->
                                 {ok, false} -> {false,          Success_Case_Count,   [Observed_Case | Failures]}
                             end
                         catch Error:Type ->
-                                error_logger:error_msg("Scenario instance ~p crashed with ~p  Stacktrace: ~p~n",
-                                                       [Scenario_Instance, {Error, Type}, erlang:get_stacktrace()]),
+                              %  error_logger:error_msg("Scenario instance ~p crashed with ~p~n  Stacktrace: ~p~n",
+                              %                         [Scenario_Instance, {Error, Type}, erlang:get_stacktrace()]),
                                 {false, Success_Case_Count, [Scenario_Instance | Failures]}
                         end
                 end, {true, 0, []}, Scenarios),
@@ -100,7 +100,7 @@ verify_all_scenarios(#tc_proper_model{behaviour=Module, scenarios=Scenarios}) ->
 %% @end
 generate_test_case(Module, #tc_proper_scenario{instance=Case_Number} = Scenario_Instance)
   when is_integer(Case_Number), Case_Number > 0 ->
-    Expected_Status = Module:deduce_proper_expected_status(Module, Scenario_Instance),
+    Expected_Status = Module:deduce_proper_expected_status(Scenario_Instance),
     #tc_proper_test_case{scenario=Scenario_Instance, expected_status=Expected_Status}.
 
 -spec generate_observed_case(module(), Unexecuted_Test_Case :: tc_proper_test_case()) -> Result :: tc_proper_test_case().
