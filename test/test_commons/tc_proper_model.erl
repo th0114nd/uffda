@@ -163,4 +163,4 @@ passed_test_case(_Cb_Module, #tc_proper_test_case{observed_status=?TC_MISSING_TE
 passed_test_case( Cb_Module, #tc_proper_test_case{scenario=#tc_proper_scenario{instance=Case_Number}} = Observed_Test_Case)
   when is_integer(Case_Number), Case_Number > 0 ->
     #tc_proper_test_case{expected_status=Expected, observed_status=Observed} = Observed_Test_Case,
-    Cb_Module:passed_proper_test_case(Case_Number, Expected, Observed).
+    {ok, Cb_Module:passed_proper_test_case(Case_Number, Expected, Observed)}.
