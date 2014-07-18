@@ -4,7 +4,6 @@
 -export([
          get_all_test_model_ids/0,
          deduce_proper_expected_status/1,
-
          vivify_proper_scenario/1,
          transform_raw_scenario/2,
          translate_proper_scenario_dsl/1,
@@ -71,21 +70,13 @@ passed_proper_test_case(_Case_Number, Expected_Status, Observed_Status) ->
 %%--------------------------------
 %% Support functions
 %%--------------------------------
-deduce(Name, [], Events = ?EVENTS) ->
-    deduce_loop(Name, Events, ordsets:new()).
+deduce_event([Service], register) when is_atom(Service) -> {ok, [Service]};
+deduce_event([Service], unregister) when is_atom(Service) -> {ok, []};
+deduce_event(Service, which_services)  -> {Service, Service}. 
+deduce(Desc, _Init_Status, Events) ->
+    {_, Output} = lists:foldl(fun(Event, {RegisteredService, Results}) ->
+                    {Return, NewlyRegistered} = deduce_event(RegisteredService, Event), 
+                    {NewlyRegistered, [Return|Results]}
+                    end, {[Desc], []}, Events), 
+    lists:reverse(Output).
 
-deduce_loop(_Name, [], _Reg) -> [];
-deduce_loop(Name, [E | ES], Reg) ->
-    case E of
-        register -> {NewReg, Expected} = case ordsets:is_element(Name, Reg) of
-                         false -> {ordsets:add_element(Name, Reg), ok};
-                         true -> {Reg, {error, already_started}}
-                    end,
-                    [Expected | deduce_loop(Name, ES, NewReg)];
-        unregister -> {NewReg, Expected} = case ordsets:is_element(Name, Reg) of
-                          true -> {ordsets:del_element(Name, Reg), ok};
-                          false -> {Reg, {error, reason}}
-                       end,
-                       [Expected | deduce_loop(Name, ES, NewReg)];
-        which_services -> [ordsets:to_list(Reg) | deduce_loop(Name, ES, Reg)]
-    end.

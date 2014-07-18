@@ -4,7 +4,6 @@
 -export([
          get_all_test_model_ids/0,
          deduce_proper_expected_status/1,
-
          vivify_proper_scenario/1,
          transform_raw_scenario/2,
          translate_proper_scenario_dsl/1,
@@ -31,18 +30,18 @@ deduce_proper_expected_status(#tc_proper_scenario{} = Scenario) ->
 
 -spec vivify_proper_scenario(Scenario :: tc_proper_scenario()) -> tc_proper_scenario_live_ref().
 vivify_proper_scenario(#tc_proper_scenario{} = _Scenario) ->
-    devapi_tester.
+    uffda_registry_sup.
 
 -spec transform_raw_scenario(pos_integer(), term()) -> tc_proper_scenario().
 transform_raw_scenario(Idx, Raw_Scen) ->
     #tc_proper_scenario{instance = Idx, scenario_desc = Raw_Scen, initial_status = [], events = []}.
 
 -spec translate_proper_scenario_dsl(tc_proper_scenario_dsl_desc()) -> tc_proper_scenario_live_desc().
-translate_proper_scenario_dsl(Dsl_Scenario) ->
+translate_proper_scenario_dsl(Dsl_Scenario) when is_atom(Dsl_Scenario) ->
     Dsl_Scenario.
 
 -spec translate_proper_scenario_events(tc_proper_scenario_dsl_events()) -> tc_proper_scenario_live_events().
-translate_proper_scenario_events(Dsl_Events) ->
+translate_proper_scenario_events(Dsl_Events) when is_atom(Dsl_Events) ->
     Dsl_Events.
 
 -spec generate_proper_observation(tc_proper_scenario_live_ref(), tc_proper_test_case()) -> term().
@@ -58,5 +57,12 @@ passed_proper_test_case(_Case_Number, _Expected_Status, _Observed_Status) ->
 %%--------------------------------
 %% Support functions
 %%--------------------------------
-deduce(_Desc, _Init_Status, _Events) ->
-    expected.
+deduce_event([Service], register) when is_atom(Service) -> {ok, [Service]};
+deduce_event([Service], unregister) when is_atom(Service) -> {ok, []};
+deduce_event(Service, which_services)  -> {Service, Service}. 
+deduce(Desc, _Init_Status, Events) ->
+    {_, Output} = lists:foldl(fun(Event, {RegisteredService, Results}) ->
+                    {Return, NewlyRegistered} = deduce_event(RegisteredService, Event), 
+                    {NewlyRegistered, [Return|Results]}
+                    end, {[Desc], []}, Events), 
+    lists:reverse(Output).
