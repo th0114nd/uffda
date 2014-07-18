@@ -76,12 +76,12 @@ generate_proper_model(Cb_Module, Model_Id, {function, Function} = Source)
 transform_raw_scenarios(Cb_Module, Model_Id, Source, Raw_Scenarios) ->
     {_, Scenarios} = lists:foldl(fun(Raw_Scenario, {Scenario_Num, Scenarios}) ->
                                          {Scenario_Num+1,
-                                          [call_transform(Cb_Module, Raw_Scenario) | Scenarios]}
+                                          [call_transform(Cb_Module, Scenario_Num, Raw_Scenario) | Scenarios]}
                                  end, {1, []}, Raw_Scenarios),
     #tc_proper_model{id=Model_Id, source=Source, behaviour=Cb_Module, scenarios=lists:reverse(Scenarios)}.
 
-call_transform(Cb_Module, Raw_Scenario) ->
-    try Cb_Module:transform_raw_scenario(Raw_Scenario)
+call_transform(Cb_Module, Scenario_Num, Raw_Scenario) ->
+    try Cb_Module:transform_raw_scenario(Scenario_Num, Raw_Scenario)
     catch Error:Type ->
             Err_Type     = {Error, Type},
             Err_Msg_Args = [Err_Type, erlang:get_stacktrace()],
@@ -144,8 +144,8 @@ generate_observed_case(Cb_Module,
                                             observed_status=?TC_MISSING_TEST_CASE_ELEMENT} = Unexecuted_Test_Case)
   when is_integer(Case_Number), Case_Number > 0 ->
     Live_Model_Ref = Cb_Module:vivify_proper_scenario(Scenario_Dsl),
-    Observation = Cb_Module:generate_proper_observation(Live_Model_Ref, Unexecuted_Test_Case),
-    #tc_proper_test_case{observed_status=Observation}.
+    Observation    = Cb_Module:generate_proper_observation(Live_Model_Ref, Unexecuted_Test_Case),
+    Unexecuted_Test_Case#tc_proper_test_case{observed_status=Observation}.
 
 -spec passed_test_case(module(), Observed_Test_Case :: tc_proper_test_case())
       -> {ok, boolean()}

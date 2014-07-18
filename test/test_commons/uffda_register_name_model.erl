@@ -18,7 +18,7 @@
 
 -spec get_all_test_model_ids() -> [{Model_Id :: tc_proper_model_id(), Source :: tc_proper_model_source()}].
 get_all_test_model_ids() ->
-    Dir = "./priv/register_name_model/",
+    Dir = "./priv/register_name_models/",
     {ok, Files} = file:list_dir(Dir),
     Pairs = [{filename:rootname(File), filename:absname(Dir ++ File)} || File <- Files],
     [{list_to_atom(Test_Name), {file, Abs_Path}} || {Test_Name, Abs_Path} <- Pairs].
@@ -52,13 +52,14 @@ translate_proper_scenario_events(Events)
   when is_list(Events) ->
     fun(Name) -> [call_uffda_client(Name, Event) || Event <- Events] end.
 
-call_uffda_client(Name, register) -> uffda_client:register_service(Name);
-call_uffda_client(Name, unregister) -> uffda_client:unregister_service(Name);
-call_uffda_client(_Name, which_services) -> uffda_client:which_services().
+call_uffda_client( Service_Name, register)       -> uffda_client:register_service   (Service_Name);
+call_uffda_client( Service_Name, unregister)     -> uffda_client:unregister_service (Service_Name);
+call_uffda_client(_Service_Name, which_services) -> uffda_client:which_services     ().
 
 -spec generate_proper_observation(tc_proper_scenario_live_ref(), tc_proper_test_case()) -> term().
-generate_proper_observation(_Live_Model_Ref, #tc_proper_test_case{} = _Test_Case_Instance) ->
-    success.
+generate_proper_observation(_Live_Model_Ref, #tc_proper_test_case{scenario=Scenario} = _Test_Case_Instance) ->
+    #tc_proper_scenario{scenario_desc=Service_Name, events=Events} = Scenario,
+    [call_uffda_client(Service_Name, Event) || Event <- Events].
 
 -spec passed_proper_test_case(Case_Number     :: pos_integer(),
                               Expected_Status :: tc_proper_scenario_dsl_status(),
@@ -77,6 +78,6 @@ deduce(Desc, _Init_Status, Events) ->
     {_, Output} = lists:foldl(fun(Event, {RegisteredService, Results}) ->
                     {Return, NewlyRegistered} = deduce_event(RegisteredService, Event), 
                     {NewlyRegistered, [Return|Results]}
-                    end, {[Desc], []}, Events), 
+                    end, {[], []}, Events), 
     lists:reverse(Output).
 
