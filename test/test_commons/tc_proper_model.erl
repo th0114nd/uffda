@@ -81,7 +81,7 @@ transform_raw_scenarios(Cb_Module, Model_Id, Source, Raw_Scenarios) ->
     #tc_proper_model{id=Model_Id, source=Source, behaviour=Cb_Module, scenarios=lists:reverse(Scenarios)}.
 
 call_transform(Cb_Module, Raw_Scenario) ->
-    try Cb_Module:transform_raw_scenario(Raw_Scenario)
+    try Cb_Module:transform_raw_scenario(1, Raw_Scenario)
     catch Error:Type ->
             Err_Type     = {Error, Type},
             Err_Msg_Args = [Err_Type, erlang:get_stacktrace()],

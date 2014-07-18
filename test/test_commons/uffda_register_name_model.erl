@@ -4,7 +4,6 @@
 -export([
          get_all_test_model_ids/0,
          deduce_proper_expected_status/1,
-         deduce/3,
          vivify_proper_scenario/1,
          transform_raw_scenario/2,
          translate_proper_scenario_dsl/1,
