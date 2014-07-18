@@ -4,6 +4,7 @@
 -export([
          get_all_test_model_ids/0,
          deduce_proper_expected_status/1,
+         deduce/3,
          vivify_proper_scenario/1,
          transform_raw_scenario/2,
          translate_proper_scenario_dsl/1,
@@ -70,13 +71,13 @@ passed_proper_test_case(_Case_Number, Expected_Status, Observed_Status) ->
 %%--------------------------------
 %% Support functions
 %%--------------------------------
-deduce_event([Service], register) when is_atom(Service) -> {ok, [Service]};
-deduce_event([Service], unregister) when is_atom(Service) -> {ok, []};
-deduce_event(Service, which_services)  -> {Service, Service}. 
 deduce(Desc, _Init_Status, Events) ->
     {_, Output} = lists:foldl(fun(Event, {RegisteredService, Results}) ->
-                    {Return, NewlyRegistered} = deduce_event(RegisteredService, Event), 
-                    {NewlyRegistered, [Return|Results]}
-                    end, {[Desc], []}, Events), 
+                                  case Event of
+                                      register -> {[Desc], [ok|Results]};
+                                      unregister -> {[], [ok|Results]};
+                                      which_services -> {RegisteredService, [RegisteredService|Results]}
+                                  end
+                              end, {[], []}, Events), 
     lists:reverse(Output).
 
