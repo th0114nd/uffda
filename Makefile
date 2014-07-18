@@ -25,13 +25,13 @@ HOST := `hostname`
 .PHONY: release clean-release
 
 run: all
-	if [ -n "${NODE}" ]; then ${RUN_SERVER} -name ${NODE}@${HOST} -boot start_sasl -s uffda; \
-	else ${RUN_SERVER} -name uffda@${HOST} -boot start_sasl -s uffda; \
+	if [ -n "${NODE}" ]; then ${RUN_SERVER} -boot start_sasl -s uffda; \
+	else ${RUN_SERVER} -boot start_sasl -s uffda; \
 	fi
 
 dev: all build-tests
-	if [ -n "${NODE}" ]; then ${DEV_SERVER} -name ${NODE}@${HOST} -boot start_sasl; \
-	else ${DEV_SERVER} -name uffda@${HOST} -boot start_sasl; \
+	if [ -n "${NODE}" ]; then ${DEV_SERVER} -boot start_sasl; \
+	else ${DEV_SERVER} -boot start_sasl; \
 	fi
 
 relxrun: release
