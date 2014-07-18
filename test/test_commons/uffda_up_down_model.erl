@@ -14,15 +14,14 @@
         generate_proper_observation/2,
         passed_proper_test_case/3]).
 
-%-include("tc_proper_model.hrl").
 
 %% Returns a list of test model ids.
-%-spec get_all_test_model_ids() -> [tc_proper_model_id()].%, tc_proper_model_source()].
+-spec get_all_test_model_ids() -> [tc_proper_model_id()].%, tc_proper_model_source()].
 get_all_test_model_ids() -> [].
 
 %% Generates a proper model from an id and a source.
-%-spec generate_proper_model(tc_proper_model_id(), tc_proper_model_source()) ->
-  %  tc_proper_model().
+-spec generate_proper_model(tc_proper_model_id(), tc_proper_model_source()) ->
+    tc_proper_model().
 generate_proper_model(_Id, _Source) ->
     #tc_proper_model{}.
 
@@ -36,7 +35,7 @@ extract_tree_and_events(FileRead) ->
     {Tree, Events}.
 
 %% Symbolically calculates final worker states.
-%-spec state_change(atom(), term()) -> atom().
+-spec state_change(atom(), term()) -> atom().
 state_change(_, online) -> up;
 state_change(_, offline) -> down;
 state_change(_, {starting, _}) -> starting_up;
@@ -62,7 +61,7 @@ translate_tree({Tree, Events}) ->
     NewTree = {node, Parent, lists:map(fun(Child) -> transition({Child, Events}) end, Children)},
     {NewTree, Events}.
 
-%-spec deduce_proper_expected_status(tc_proper_scenario()) -> term(). 
+-spec deduce_proper_expected_status(tc_proper_scenario()) -> term(). 
 deduce_proper_expected_status(#tc_proper_scenario{scenario_desc = Scenario} = _TCPS) ->
     translate_tree(extract_tree_and_events(Scenario)).
 
@@ -71,24 +70,24 @@ deduce_proper_expected_status(#tc_proper_scenario{scenario_desc = Scenario} = _T
 %%---------------------------------------------------------------------
 
 %% Uses DSL to instantiate a real program.
-%-spec vivify_proper_scenario(tc_proper_scenario()) -> tc_proper_scenario_live_ref().
+-spec vivify_proper_scenario(tc_proper_scenario()) -> tc_proper_scenario_live_ref().
 vivify_proper_scenario(_Scenario) ->
     #tc_proper_scenario{}. 
 
-%-spec translate_proper_scenario_dsl(tc_proper_scenario_dsl_desc()) -> 
-   % tc_proper_scenario_live_desc().
+-spec translate_proper_scenario_dsl(tc_proper_scenario_dsl_desc()) -> 
+    tc_proper_scenario_live_desc().
 translate_proper_scenario_dsl(_DSL_Desc) -> ok.
 
-%-spec translate_proper_scenario_events(tc_proper_scenario_dsl_events()) ->
-    %tc_proper_scenario_live_events().
+-spec translate_proper_scenario_events(tc_proper_scenario_dsl_events()) ->
+    tc_proper_scenario_live_events().
 translate_proper_scenario_events(_DSL_Events) -> ok.
 
 %% Generates an observation by running events on live program.
-%-spec generate_proper_observation(tc_proper_test_case()) -> term().
+-spec generate_proper_observation(tc_proper_scenario_live_ref(), tc_proper_test_case()) -> term().
 generate_proper_observation(_Live_Model_Ref, #tc_proper_test_case{} = _Test_Case_Instance) ->
     success.
 
 %% Compares the expected results with live program results.
-%-spec passed_proper_test_case(pos_integer(), tc_proper_scenario_dsl_status(),
-%                              tc_proper_scenario_live_status()) -> boolean().
+-spec passed_proper_test_case(pos_integer(), tc_proper_scenario_dsl_status(),
+                              tc_proper_scenario_live_status()) -> boolean().
 passed_proper_test_case(_CaseNumber, _ExpectedStatus, _ObservedStatus) -> true.

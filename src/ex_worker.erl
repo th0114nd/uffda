@@ -29,6 +29,8 @@ service_loop(Name) ->
         {whoami, Pid} -> Pid ! Name;
         crash   -> exit(kill);
         unregister -> uffda_client:unregister_service(Name);
+        register -> uffda_client:register_service(Name);
+        starting -> uffda_client:starting_service(Name, self());
         online    -> uffda_client:set_service_online(Name);
         offline  -> uffda_client:set_service_offline(Name);
         {state, Pid} -> Pid ! uffda_client:service_status(Name);

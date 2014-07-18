@@ -1,10 +1,12 @@
 PROJECT = uffda
 
-DEPS = cowboy
+DEPS = cowboy eper
 dep_cowboy = https://github.com/extend/cowboy.git 0.9.0
+dep_eper =  https://github.com/massemanet/eper 0.85.0
 
 TEST_DEPS = proper
 dep_proper = https://github.com/manopapad/proper v1.1
+
 
 # Needed for testing
 CT_OPTS := -cover test/uffda.coverspec
