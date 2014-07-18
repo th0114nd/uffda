@@ -31,7 +31,7 @@
 
 %% Behaviour callbacks for generating a tc_proper_model and expected outcomes
 -callback get_all_test_model_ids() -> [{Model_Id :: tc_proper_model_id(), Source :: tc_proper_model_source()}].
--callback transform_raw_scenario(Raw_Scenario :: tc_proper_scenario()) -> Scenario :: tc_proper_scenario.
+-callback transform_raw_scenario(Scenario_Num :: pos_integer(), Raw_Scenario :: term()) -> Scenario :: tc_proper_scenario().
 -callback deduce_proper_expected_status(Scenario_Instance :: tc_proper_scenario()) -> Expected_Status :: term().
 
 %% Behaviour callbacks used per scenario when validating against the model
@@ -62,13 +62,30 @@ test_all_models(Module) ->
 
 generate_proper_model(Model_Id, {file, Full_Name} = Source) ->
     {ok, Raw_Scenarios} = file:consult(Full_Name),
-    Scenarios = [Module:transform_raw_scenario(Raw_Scenario) || Raw_Scenario <- Raw_Scenarios],
-    #tc_proper_model{id=Model_Id, source=Source, behaviour=?MODULE, scenarios=Scenarios};
+    transform_raw_scenarios(Raw_Scenarios);
 generate_proper_model(Model_Id, {mfa, {Module, Function, Args}}) ->
-    apply(Module, Function, [Model_Id | Args]);
+    {ok, Raw_Scenarios} = apply(Module, Function, [Model_Id | Args]),
+    transform_raw_scenarios(Raw_Scenarios);
 generate_proper_model(Model_Id, {function, Function})
   when is_function(Function, 0) ->
-    Function().
+    {ok, Raw_Scenarios} = Function(),
+    transform_raw_scenarios(Raw_Scenarios).
+
+transform_raw_scenarios(Raw_Scenarios) ->
+    {_, Scenarios} = lists:foldl(fun(Raw_Scenario, {Scenario_Num, Scenarios}) ->
+                                         {Scenario_Num+1,
+                                          [call_transform(Raw_Scenario) | Scenarios]}
+                                 end, {1, []}, Raw_Scenarios),
+    #tc_proper_model{id=Model_Id, source=Source, behaviour=?MODULE, scenarios=lists:reverse(Scenarios)};
+
+call_transform(Raw_Scenario) ->
+    try Module:transform_raw_scenario(Raw_Scenario)
+    catch Error:Type ->
+            Err_Type     = {Error, Type},
+            Err_Msg_Args = [Err_Type, erlang:get_stacktrace()],
+            error_logger:error_msg("Scenario translation error: ~p~n~p", [Err_Msg_Args]),
+            Err_Type
+    end.
     
 
 -spec verify_all_scenarios(Test_Model :: tc_proper_model()) -> tc_proper_model_result().
