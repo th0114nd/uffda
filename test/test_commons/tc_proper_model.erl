@@ -31,7 +31,7 @@
 
 %% Behaviour callbacks for generating a tc_proper_model and expected outcomes
 -callback get_all_test_model_ids() -> [{Model_Id :: tc_proper_model_id(), Source :: tc_proper_model_source()}].
--callback transform_raw_scenario(Idx :: pos_integer(), Raw_Scenario :: term()) -> Scenario :: tc_proper_scenario().
+-callback transform_raw_scenario(Scenario_Num :: pos_integer(), Raw_Scenario :: term()) -> Scenario :: tc_proper_scenario().
 -callback deduce_proper_expected_status(Scenario_Instance :: tc_proper_scenario()) -> Expected_Status :: term().
 
 %% Behaviour callbacks used per scenario when validating against the model
@@ -53,25 +53,41 @@
 %% External API for testing all models implemented by a module.
 %%-------------------------------------------------------------------
 
+%% Cb_Module is the callback module provided by the model instance.
 -spec test_all_models(module()) -> [{tc_proper_model_id(), tc_proper_model_result()}].
-test_all_models(Module) ->
+test_all_models(Cb_Module) ->
     [begin
-         Test_Model = generate_proper_model(Module, Model_Id, Source),
+         Test_Model = generate_proper_model(Cb_Module, Model_Id, Source),
          {Model_Id, verify_all_scenarios(Test_Model)}
-     end || {Model_Id, Source} <- Module:get_all_test_model_ids()].
+     end || {Model_Id, Source} <- Cb_Module:get_all_test_model_ids()].
 
--type mfargs() :: {atom(), atom(), [term()]}.
--type model_input() :: {file, file:name_all()} | {mfa, mfargs()} | {function, fun(() -> tc_proper_model())}.
--spec generate_proper_model(module(), tc_proper_model_id(), model_input()) -> tc_proper_model().
-generate_proper_model(CB_Module, Model_Id, {file, Full_Name} = Source) ->
+-spec generate_proper_model(module(), tc_proper_model_id(), tc_proper_model_source()) -> tc_proper_model().
+generate_proper_model(Cb_Module, Model_Id, {file, Full_Name} = Source) ->
     {ok, Raw_Scenarios} = file:consult(Full_Name),
-    Scenarios = [CB_Module:transform_raw_scenario(Raw_Scenario) || Raw_Scenario <- Raw_Scenarios],
-    #tc_proper_model{id=Model_Id, source=Source, behaviour=?MODULE, scenarios=Scenarios};
-generate_proper_model(_CB_Module, Model_Id, {mfa, {Module, Function, Args}}) ->
-    apply(Module, Function, [Model_Id | Args]);
-generate_proper_model(_CB_Module, _Model_Id, {function, Function})
-  when is_function(Function, 0) ->
-    Function().
+    transform_raw_scenarios(Cb_Module, Model_Id, Source, Raw_Scenarios);
+generate_proper_model(Cb_Module, Model_Id, {mfa, {Mfa_Module, Function, Args}} = Source) ->
+    {ok, Raw_Scenarios} = apply(Mfa_Module, Function, [Cb_Module, Model_Id | Args]),
+    transform_raw_scenarios(Cb_Module, Model_Id, Source, Raw_Scenarios);
+generate_proper_model(Cb_Module, Model_Id, {function, Function} = Source)
+  when is_function(Function, 1) ->
+    {ok, Raw_Scenarios} = Function(Model_Id),
+    transform_raw_scenarios(Cb_Module, Model_Id, Source, Raw_Scenarios).
+
+transform_raw_scenarios(Cb_Module, Model_Id, Source, Raw_Scenarios) ->
+    {_, Scenarios} = lists:foldl(fun(Raw_Scenario, {Scenario_Num, Scenarios}) ->
+                                         {Scenario_Num+1,
+                                          [call_transform(Cb_Module, Raw_Scenario) | Scenarios]}
+                                 end, {1, []}, Raw_Scenarios),
+    #tc_proper_model{id=Model_Id, source=Source, behaviour=Cb_Module, scenarios=lists:reverse(Scenarios)}.
+
+call_transform(Cb_Module, Raw_Scenario) ->
+    try Cb_Module:transform_raw_scenario(Raw_Scenario)
+    catch Error:Type ->
+            Err_Type     = {Error, Type},
+            Err_Msg_Args = [Err_Type, erlang:get_stacktrace()],
+            error_logger:error_msg("Scenario translation error: ~p~n~p", [Err_Msg_Args]),
+            Err_Type
+    end.
     
 
 -spec verify_all_scenarios(Test_Model :: tc_proper_model()) -> tc_proper_model_result().
@@ -80,14 +96,14 @@ generate_proper_model(_CB_Module, _Model_Id, {function, Function})
 %%   validate that they all pass.
 %% @end
 verify_all_scenarios(#tc_proper_model{scenarios=[]}) -> {true, []};
-verify_all_scenarios(#tc_proper_model{behaviour=Module, scenarios=Scenarios}) ->
+verify_all_scenarios(#tc_proper_model{behaviour=Cb_Module, scenarios=Scenarios}) ->
     {Success, Success_Case_Count, Failed_Cases}
         = lists:foldl(fun(#tc_proper_scenario{instance=Case_Number} = Scenario_Instance,
                           {Boolean_Result, Success_Case_Count, Failures}) when Case_Number > 0 ->
                         try
-                            Test_Case     = generate_test_case     (Module, Scenario_Instance),
-                            Observed_Case = generate_observed_case (Module, Test_Case),
-                            case passed_test_case(Module, Observed_Case) of
+                            Test_Case     = generate_test_case     (Cb_Module, Scenario_Instance),
+                            Observed_Case = generate_observed_case (Cb_Module, Test_Case),
+                            case passed_test_case(Cb_Module, Observed_Case) of
                                 %% Errors should not be possible as we have filled in Observed_Case properly.
                                 {ok, true}  -> {Boolean_Result, Success_Case_Count+1, Failures};
                                 {ok, false} -> {false,          Success_Case_Count,   [Observed_Case | Failures]}
@@ -112,9 +128,9 @@ verify_all_scenarios(#tc_proper_model{behaviour=Module, scenarios=Scenarios}) ->
 %%   executing the scenario. The passed in test_case should have all fields specified
 %%   and not just a default initialization of the tc_proper_scenario() type.
 %% @end
-generate_test_case(Module, #tc_proper_scenario{instance=Case_Number} = Scenario_Instance)
+generate_test_case(Cb_Module, #tc_proper_scenario{instance=Case_Number} = Scenario_Instance)
   when is_integer(Case_Number), Case_Number > 0 ->
-    Expected_Status = Module:deduce_proper_expected_status(Scenario_Instance),
+    Expected_Status = Cb_Module:deduce_proper_expected_status(Scenario_Instance),
     #tc_proper_test_case{scenario=Scenario_Instance, expected_status=Expected_Status}.
 
 -spec generate_observed_case(module(), Unexecuted_Test_Case :: tc_proper_test_case()) -> Result :: tc_proper_test_case().
@@ -123,12 +139,12 @@ generate_test_case(Module, #tc_proper_scenario{instance=Case_Number} = Scenario_
 %%   the events to the scenario and then retrieve the observed status. This function
 %%   returns an instance of an observed test case that can be validated later.
 %% @end
-generate_observed_case(Module,
+generate_observed_case(Cb_Module,
                        #tc_proper_test_case{scenario=#tc_proper_scenario{instance=Case_Number} = Scenario_Dsl,
                                             observed_status=?TC_MISSING_TEST_CASE_ELEMENT} = Unexecuted_Test_Case)
   when is_integer(Case_Number), Case_Number > 0 ->
-    Live_Model_Ref = Module:vivify_proper_scenario(Scenario_Dsl),
-    Observation = Module:generate_proper_observation(Live_Model_Ref, Unexecuted_Test_Case),
+    Live_Model_Ref = Cb_Module:vivify_proper_scenario(Scenario_Dsl),
+    Observation = Cb_Module:generate_proper_observation(Live_Model_Ref, Unexecuted_Test_Case),
     #tc_proper_test_case{observed_status=Observation}.
 
 -spec passed_test_case(module(), Observed_Test_Case :: tc_proper_test_case())
@@ -140,11 +156,11 @@ generate_observed_case(Module,
 %%   result status, use the behaviour module to verify if the expected status
 %%   matches the observed status.
 %% @end
-passed_test_case(_Module, #tc_proper_test_case{expected_status=?TC_MISSING_TEST_CASE_ELEMENT} = Observed_Test_Case) ->
+passed_test_case(_Cb_Module, #tc_proper_test_case{expected_status=?TC_MISSING_TEST_CASE_ELEMENT} = Observed_Test_Case) ->
     {error, {expected_status_not_generated, Observed_Test_Case}};
-passed_test_case(_Module, #tc_proper_test_case{observed_status=?TC_MISSING_TEST_CASE_ELEMENT} = Observed_Test_Case) ->
+passed_test_case(_Cb_Module, #tc_proper_test_case{observed_status=?TC_MISSING_TEST_CASE_ELEMENT} = Observed_Test_Case) ->
     {error, {observed_status_not_generated, Observed_Test_Case}};
-passed_test_case( Module, #tc_proper_test_case{scenario=#tc_proper_scenario{instance=Case_Number}} = Observed_Test_Case)
+passed_test_case( Cb_Module, #tc_proper_test_case{scenario=#tc_proper_scenario{instance=Case_Number}} = Observed_Test_Case)
   when is_integer(Case_Number), Case_Number > 0 ->
     #tc_proper_test_case{expected_status=Expected, observed_status=Observed} = Observed_Test_Case,
-    Module:passed_proper_test_case(Case_Number, Expected, Observed).
+    Cb_Module:passed_proper_test_case(Case_Number, Expected, Observed).
