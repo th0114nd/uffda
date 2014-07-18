@@ -3,10 +3,9 @@
 
 -export([
          get_all_test_model_ids/0,
-         generate_proper_model/2,
          deduce_proper_expected_status/1,
-         deduce/3,
          vivify_proper_scenario/1,
+         transform_raw_scenario/2,
          translate_proper_scenario_dsl/1,
          translate_proper_scenario_events/1,
          generate_proper_observation/2,
@@ -18,14 +17,6 @@
 -spec get_all_test_model_ids() -> [{Model_Id :: tc_proper_model_id(), Source :: tc_proper_model_source()}].
 get_all_test_model_ids() ->
     [{devapi_example, {file, "devapi_example"}}].
-
--spec generate_proper_model(Model_Id :: tc_proper_model_id(), Source :: tc_proper_model_source()) -> tc_proper_model().
-generate_proper_model(Id, {file, Filename} = Source) ->
-    {ok, Scenarios} = file:consult(Filename),
-    Pairs = lists:zip(lists:seq(1, length(Scenarios)), Scenarios),
-    TCScenarios = [#tc_proper_scenario{instance=SID, scenario_desc=S, initial_status=[], events=[register]}
-                   || {SID, S} <- Pairs], 
-    #tc_proper_model{id=Id, source=Source, behaviour=?MODULE, scenarios=TCScenarios}.
 
 -spec deduce_proper_expected_status(Scenario_Instance :: tc_proper_scenario()) -> Expected_Status :: term().
 deduce_proper_expected_status(#tc_proper_scenario{} = Scenario) ->
@@ -40,6 +31,10 @@ deduce_proper_expected_status(#tc_proper_scenario{} = Scenario) ->
 -spec vivify_proper_scenario(Scenario :: tc_proper_scenario()) -> tc_proper_scenario_live_ref().
 vivify_proper_scenario(#tc_proper_scenario{} = _Scenario) ->
     uffda_registry_sup.
+
+-spec transform_raw_scenario(pos_integer(), term()) -> tc_proper_scenario().
+transform_raw_scenario(Idx, Raw_Scen) ->
+    #tc_proper_scenario{instance = Idx, scenario_desc = Raw_Scen, initial_status = [], events = []}.
 
 -spec translate_proper_scenario_dsl(tc_proper_scenario_dsl_desc()) -> tc_proper_scenario_live_desc().
 translate_proper_scenario_dsl(Dsl_Scenario) when is_atom(Dsl_Scenario) ->
@@ -58,7 +53,6 @@ generate_proper_observation(_Live_Model_Ref, #tc_proper_test_case{} = _Test_Case
                               Observed_Status :: tc_proper_scenario_live_status()) -> boolean().
 passed_proper_test_case(_Case_Number, _Expected_Status, _Observed_Status) ->
     true.
-
 
 %%--------------------------------
 %% Support functions

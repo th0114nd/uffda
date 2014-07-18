@@ -190,9 +190,11 @@ register_one_name(Type) ->
                                ?WHENFAIL(ct:log("Service name ~p failed~n", [Service_Name]),
                                          begin
                                              %% Undo register in case a dup name comes later.
-                                             ok = uffda_client:register_service   (Service_Name),
+                                             []             = uffda_client:which_services(),
+                                             ok             = uffda_client:register_service(Service_Name),
                                              [Service_Name] = uffda_client:which_services(),
-                                             ok= uffda_client:unregister_service (Service_Name),
+                                             ok             = uffda_client:unregister_service(Service_Name),
+                                             []             = uffda_client:which_services(),
                                              true
                                          end)
                            end)),
