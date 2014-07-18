@@ -34,7 +34,6 @@
 
 %% Dev shell testing
 -export([
-         prop_start_application/0,
          prop_register_simple_name/0,
          prop_register_service_name/0
 %%         prop_register_unregister/0
@@ -164,9 +163,12 @@ verify_register_service_name(_Config) ->
 
 prop_register_simple_name() ->
     ok = uffda:start(),
-    Result = register_one_name(alpha),
-    ok = uffda:stop(),
-    Result.
+    try Model_Result_Pairs = tc_proper_model:test_all_models(uffda_register_name_model),
+        Results = [Res || {_Id, Res} <- Model_Result_Pairs],
+        lists:all(fun({Passed, _Num_Passed, _Failures}) -> Passed end, Results)
+    %try register_one_name(alpha)
+    after ok = uffda:stop()
+    end.
 
 prop_register_service_name() ->
     ok = uffda:start(),
@@ -189,7 +191,8 @@ register_one_name(Type) ->
                                          begin
                                              %% Undo register in case a dup name comes later.
                                              ok = uffda_client:register_service   (Service_Name),
-                                             ok = uffda_client:unregister_service (Service_Name),
+                                             [Service_Name] = uffda_client:which_services(),
+                                             ok= uffda_client:unregister_service (Service_Name),
                                              true
                                          end)
                            end)),

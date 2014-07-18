@@ -14,7 +14,6 @@
         generate_proper_observation/2,
         passed_proper_test_case/3]).
 
--include("tc_proper_model.hrl").
 
 %% Returns a list of test model ids.
 -spec get_all_test_model_ids() -> [tc_proper_model_id()].%, tc_proper_model_source()].
@@ -84,7 +83,7 @@ translate_proper_scenario_dsl(_DSL_Desc) -> ok.
 translate_proper_scenario_events(_DSL_Events) -> ok.
 
 %% Generates an observation by running events on live program.
--spec generate_proper_observation(tc_proper_test_case()) -> term().
+-spec generate_proper_observation(tc_proper_scenario_live_ref(), tc_proper_test_case()) -> term().
 generate_proper_observation(_Live_Model_Ref, #tc_proper_test_case{} = _Test_Case_Instance) ->
     success.
 
