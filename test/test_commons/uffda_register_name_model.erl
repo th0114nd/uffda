@@ -19,7 +19,7 @@
 
 -spec get_all_test_model_ids() -> [{Model_Id :: tc_proper_model_id(), Source :: tc_proper_model_source()}].
 get_all_test_model_ids() ->
-    Dir = "./priv/register_name_model/",
+    Dir = "./priv/register_name_models/",
     {ok, Files} = file:list_dir(Dir),
     Pairs = [{filename:rootname(File), filename:absname(Dir ++ File)} || File <- Files],
     [{list_to_atom(Test_Name), {file, Abs_Path}} || {Test_Name, Abs_Path} <- Pairs].
