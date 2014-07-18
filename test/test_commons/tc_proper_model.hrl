@@ -41,7 +41,7 @@
 -type tc_proper_test_case() :: #tc_proper_test_case{}.
 
 -type tc_proper_model_id()     :: term().
--type tc_proper_model_source() :: {file, string()}
+-type tc_proper_model_source() :: {file, file:name_all()}
                                 | {mfa, {Module::module(), Function::atom(), Args::list()}}.
 
 %% The full PropEr model
