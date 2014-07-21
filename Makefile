@@ -41,6 +41,8 @@ images: doc
 	mkdir -p doc/images
 	dot -Tpng doc/states.dot -o doc/images/states.png
 	dot -Tpng doc/tc_proper_model_behaviour.dot -o doc/images/tc_proper_model_behaviour.png
+	dot -Tpng doc/unify.dot -o doc/images/unify.png
+	dot -Tpng doc/test_hierarchy.dot -o doc/images/test_hierarchy.png
 
 release: clean-release all
 	relx -o rel/$(PROJECT)
