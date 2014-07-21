@@ -22,14 +22,14 @@ RUN_SERVER := erl -pa deps/*/ebin -pa ebin -smp enable -setcookie CISFORCOOKIE
 HOST := `hostname` 
 
 
-.PHONY: release clean-release
+.PHONY: release clean-release patch
 
-run: all
+run: all patch
 	if [ -n "${NODE}" ]; then ${RUN_SERVER} -boot start_sasl -s uffda; \
 	else ${RUN_SERVER} -boot start_sasl -s uffda; \
 	fi
 
-dev: all build-tests
+dev: all build-tests patch
 	if [ -n "${NODE}" ]; then ${DEV_SERVER} -boot start_sasl; \
 	else ${DEV_SERVER} -boot start_sasl; \
 	fi
@@ -44,6 +44,13 @@ images: doc
 
 release: clean-release all
 	relx -o rel/$(PROJECT)
+
+.IGNORE: patch
+patch: deps
+	patch -d deps/proper -N -p1 < 0001-Also-accept-native-types-in-LETs.patch
+   
+unpatch: deps
+	patch -d deps/proper -R -p1 < 0001-Also-accept-native-types-in-LETs.patch
 
 clean-release: clean-all
 	rm -rf rel/$(PROJECT)
