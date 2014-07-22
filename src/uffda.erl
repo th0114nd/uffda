@@ -47,14 +47,6 @@ stop() -> application:stop(?MODULE).
 %% @end
 -spec start(any(), any()) -> {ok, pid()}.
 start(_StartType, _StartArgs) -> 
-    %Dispatch = cowboy_router:compile([
-    %        {'_', [
-    %                 {"/", rest_handler, []}
-    %        ]}
-    %]),
-    %{ok, _} = cowboy:start_http(http, 100, [{port, 8080}], [
-    %        {env, [{dispatch, Dispatch}]}
-    %]),
     uffda_root_sup:start_link([service_registry, rest_api]).
 
 %% @doc
