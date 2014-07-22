@@ -1,43 +1,16 @@
 digraph G {
-//       {
-//           node [shape = star]
-//           system_test
-//       }
-//       {
-//           node [shape = pentagon]
-//           prop2
-//       }
-//       {
-//           node [shape = square]
-//           prop1
-//           prop2
-//           prop3
-//       }
-//       {
-//           node [shape = signature]
-//           model1
-//           model2
-//           model3
-//       }
-//       {
-//           node [shape = restrictionsite]
-//           scenario1
-//           scenario2
-//           scenario3
-//       }
        rankdir=LR
        node [shape = rectangle]
-       system_test -> prop1
-       system_test -> prop2
-       system_test -> prop3
+       system_test -> property_1
+       system_test -> property_2
+       system_test -> property_3
 
-//       prop2 -> prop2;
        
-       prop1 -> model1
-       prop2 -> model2
-       prop3 -> model3
+       property_1 -> model_representation_1
+       property_2 -> model_representation_2
+       property_3 -> model_representation_3
        
-       model2 -> scenario2A
-       model2 -> scenario2B
-       model2 -> scenario2C
+       model_representation_2 -> scenario_2_A
+       model_representation_2 -> scenario_2_B
+       model_representation_2 -> scenario_2_C
 }
