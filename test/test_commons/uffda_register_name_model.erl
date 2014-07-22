@@ -37,7 +37,6 @@ deduce_proper_expected_status(#tc_proper_scenario{} = Scenario) ->
                         failed
     end.
     
-
 -spec vivify_proper_scenario(Scenario :: tc_proper_scenario()) -> tc_proper_scenario_live_ref().
 vivify_proper_scenario(#tc_proper_scenario{} = _Scenario) ->
     uffda_registry_sup.
