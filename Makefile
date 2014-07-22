@@ -1,7 +1,7 @@
 PROJECT = uffda
 
 DEPS = cowboy eper
-dep_cowboy = https://github.com/extend/cowboy.git 0.9.0
+dep_cowboy = pgk://cowboy master
 dep_eper =  https://github.com/massemanet/eper 0.85.0
 
 TEST_DEPS = proper

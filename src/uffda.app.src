@@ -5,7 +5,7 @@
   {id, "uffda"},
   {registered, [uffda_registry_sup]},
   {applications, [kernel, stdlib]},
-  {included_applications, []},
+  {included_applications, [public_key, crypto, ssl, asn1]},
   {mod, {uffda, []}},
   {modules, []},
   {env, []}
