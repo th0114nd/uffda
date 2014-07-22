@@ -9,6 +9,8 @@ log
 logs
 tags
 rel
+_rel
+relx
 *.css
 *.beam
 *.html
