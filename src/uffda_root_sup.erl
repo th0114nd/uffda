@@ -25,17 +25,3 @@ service_registry() ->
 -spec rest_api() -> supervisor:child_spec().
 rest_api() ->
     ?CHILD(rest_api_sup, []).
-
--spec prog_tree_test() -> supervisor:child_spec().
-prog_tree_test() ->
-    {?MODULE, {?MODULE, run_prog, []}, transient, 2000, worker, [?MODULE]}.
-
--spec run_prog() -> {ok, pid()}.
-run_prog() ->
-    {ok, spawn_link(fun() ->  
-            {ok, Prog} = uffda_dsl:parse_from_file('priv/ex.prog'),
-            uffda_dsl:run_program(Prog),
-            receive
-                not_really_sent -> ok
-            end
-        end)}.
