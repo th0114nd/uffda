@@ -4,8 +4,9 @@ DEPS = cowboy eper
 dep_cowboy = pkg://cowboy 0.9.0
 dep_eper =  pkg://eper 0.85.0
 
-TEST_DEPS = proper
+TEST_DEPS = proper test_commons
 dep_proper = pkg://proper v1.1
+dep_test_commons = https://github.com/th0114nd/test_commons
 
 
 # Needed for testing
@@ -13,9 +14,10 @@ CT_OPTS := -cover test/uffda.coverspec
 CT_SUITES := uffda_registry uffda_service uffda_system
 
 DIALYZER_OPTS := test/uffda -Werror_handling -Wrace_conditions -Wunmatched_returns
-EDOC_OPTS := {preprocess, true}, {source_path, ["src", "examples", "test/uffda"]}, nopackages, {subpackages, true}
+EDOC_DIRS := ["src", "examples", "test/uffda", "test/test_commons"]
+EDOC_OPTS := {preprocess, true}, {source_path, ${EDOC_DIRS}}, nopackages, {subpackages, true}
 
-COMPILE_FIRST := ../test/test_commons/tc_proper_model
+#COMPILE_FIRST := ../test/test_commons/tc_proper_model
 #TEST_ERLC_OPTS := -pa test -pa deps/*/ebin -pa ebin
 DEV_SERVER := erl -pa test -pa deps/*/ebin -pa ebin -smp enable -setcookie CISFORCOOKIE
 RUN_SERVER := erl -pa deps/*/ebin -pa ebin -smp enable -setcookie CISFORCOOKIE
