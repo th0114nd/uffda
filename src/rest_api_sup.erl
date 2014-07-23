@@ -6,7 +6,7 @@
 
 -spec init(term()) -> {ok, {{supervisor:strategy(), non_neg_integer(), non_neg_integer()},
                             [supervisor:child_specs()]}}.
--define(SUPER(__Mod, __Args), {__Mod, {__Mod, start_link, __Args}, permanent, infinity, supervisor, [__Mod]}).
+-define(SUPER(__Mod, __Args), {__Mod, {__Mod, start_link, __Args}, transient, infinity, supervisor, [__Mod]}).
 -define(SERVER, ?MODULE).
 
 start_link() ->

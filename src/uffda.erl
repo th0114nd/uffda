@@ -19,7 +19,7 @@
 -behavior(application).
 
 -export([start/0, stop/0]).
--export([start/2, stop/1]).
+-export([start/2, stop/1, prep_stop/1]).
 
 %%-------------------------------------------------------------------
 %% ADMIN API
@@ -45,12 +45,24 @@ stop() -> application:stop(?MODULE).
 %%   Starts the application in an OTP environment. Currently uffda
 %%   is not expected to be run as a distributed erlang application.
 %% @end
--spec start(any(), any()) -> {ok, pid()}.
+-spec start(any(), any()) -> {ok, pid(), proplists:proplist()}.
 start(_StartType, _StartArgs) -> 
-    uffda_root_sup:start_link([service_registry, rest_api]).
+    RanchRef = ranch_ref(),
+    {ok, Pid} = uffda_root_sup:start_link({[service_registry, rest_api], RanchRef}),
+    {ok, Pid, [{ranch_ref, RanchRef}, {cowboy_sup_pid, whereis(cowboy_sup)}]}.
+
+
+-spec prep_stop(proplists:proplist()) -> ok.
+prep_stop(State) ->
+    RR = proplists:get_value(ranch_ref, State),
+    cowboy:stop_listener(RR),
+    CSP = proplists:get_value(cowboy_sup_pid, State),
+    Children = supervisor:which_children(CSP),
+    [supervisor:terminate(CSP, ID) || {ID, _Child, _Type, _Module} <- Children],
+    ok.
 
 %% @doc
 %%   Stops the application in an OTP environment.
 %% @end
--spec stop(any()) -> no_return().
-stop(_State) -> ok.
+-spec stop(ok) -> no_return().
+stop(ok) -> ok.
