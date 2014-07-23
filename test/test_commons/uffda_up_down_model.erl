@@ -1,29 +1,29 @@
 -module(uffda_up_down_model).
--behavior(tc_proper_model).
+-behavior(tcb_model).
 
--include("tc_proper_model.hrl").
-%% Generate tc_proper_model and expected outcomes.
+-include_lib("test_commons/include/tcb.hrl").
+%% Generate tcb_model and expected outcomes.
 -export([get_all_test_model_ids/0,
-         generate_proper_model/2,
-         deduce_proper_expected_status/1]).
+         generate_model/2,
+         deduce_expected_status/1]).
 
-%% Used per scenario when validating against the proper model.
--export([vivify_proper_scenario/1,
-        translate_proper_scenario_dsl/1,
-        translate_proper_scenario_events/1,
-        generate_proper_observation/2,
-        passed_proper_test_case/3]).
+%% Used per scenario when validating against the common behavior model.
+-export([vivify_scenario/1,
+        translate_scenario_dsl/1,
+        translate_scenario_events/1,
+        generate_observation/2,
+        passed_test_case/3]).
 
 
 %% Returns a list of test model ids.
--spec get_all_test_model_ids() -> [tc_proper_model_id()].%, tc_proper_model_source()].
+-spec get_all_test_model_ids() -> [tcb_model_id()].%, tc_model_source()].
 get_all_test_model_ids() -> [].
 
-%% Generates a proper model from an id and a source.
--spec generate_proper_model(tc_proper_model_id(), tc_proper_model_source()) ->
-    tc_proper_model().
-generate_proper_model(_Id, _Source) ->
-    #tc_proper_model{}.
+%% Generates a common behavior model from an id and a source.
+-spec generate_model(tcb_model_id(), tcb_model_source()) ->
+    tcb_model().
+generate_model(_Id, _Source) ->
+    #tcb_model{}.
 
 %%------------------------------------------------------------------------
 %% SIMULATING A TRANSITION SEQUENCE
@@ -61,8 +61,8 @@ translate_tree({Tree, Events}) ->
     NewTree = {node, Parent, lists:map(fun(Child) -> transition({Child, Events}) end, Children)},
     {NewTree, Events}.
 
--spec deduce_proper_expected_status(tc_proper_scenario()) -> term(). 
-deduce_proper_expected_status(#tc_proper_scenario{scenario_desc = Scenario} = _TCPS) ->
+-spec deduce_expected_status(tcb_scenario()) -> term(). 
+deduce_expected_status(#tcb_scenario{scenario_desc = Scenario} = _TCPS) ->
     translate_tree(extract_tree_and_events(Scenario)).
 
 %%---------------------------------------------------------------------
@@ -70,24 +70,24 @@ deduce_proper_expected_status(#tc_proper_scenario{scenario_desc = Scenario} = _T
 %%---------------------------------------------------------------------
 
 %% Uses DSL to instantiate a real program.
--spec vivify_proper_scenario(tc_proper_scenario()) -> tc_proper_scenario_live_ref().
-vivify_proper_scenario(_Scenario) ->
-    #tc_proper_scenario{}. 
+-spec vivify_scenario(tcb_scenario()) -> tcb_scenario_live_ref().
+vivify_scenario(_Scenario) ->
+    #tcb_scenario{}. 
 
--spec translate_proper_scenario_dsl(tc_proper_scenario_dsl_desc()) -> 
-    tc_proper_scenario_live_desc().
-translate_proper_scenario_dsl(_DSL_Desc) -> ok.
+-spec translate_scenario_dsl(tcb_scenario_dsl_desc()) -> 
+    tcb_scenario_live_desc().
+translate_scenario_dsl(_DSL_Desc) -> ok.
 
--spec translate_proper_scenario_events(tc_proper_scenario_dsl_events()) ->
-    tc_proper_scenario_live_events().
-translate_proper_scenario_events(_DSL_Events) -> ok.
+-spec translate_scenario_events(tcb_scenario_dsl_events()) ->
+    tcb_scenario_live_events().
+translate_scenario_events(_DSL_Events) -> ok.
 
 %% Generates an observation by running events on live program.
--spec generate_proper_observation(tc_proper_scenario_live_ref(), tc_proper_test_case()) -> term().
-generate_proper_observation(_Live_Model_Ref, #tc_proper_test_case{} = _Test_Case_Instance) ->
+-spec generate_observation(tcb_scenario_live_ref(), tcb_test_case()) -> term().
+generate_observation(_Live_Model_Ref, #tcb_test_case{} = _Test_Case_Instance) ->
     success.
 
 %% Compares the expected results with live program results.
--spec passed_proper_test_case(pos_integer(), tc_proper_scenario_dsl_status(),
-                              tc_proper_scenario_live_status()) -> boolean().
-passed_proper_test_case(_CaseNumber, _ExpectedStatus, _ObservedStatus) -> true.
+-spec passed_test_case(pos_integer(), tcb_scenario_dsl_status(),
+                              tcb_scenario_live_status()) -> boolean().
+passed_test_case(_CaseNumber, _ExpectedStatus, _ObservedStatus) -> true.
