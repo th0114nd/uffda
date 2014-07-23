@@ -10,7 +10,7 @@ start_link() ->
     supervisor:start_link({local, ?SUPER}, ?MODULE, {}).
 
 -spec init({}) -> {ok, {{supervisor:strategy(), non_neg_integer(), non_neg_integer()},
-                                                  [supervisor:child_spec()]}}.
+                        [supervisor:child_spec()]}}.
 init({}) ->
     Procs = [?CHILD(uffda_registry_sup), ?CHILD(rest_api_sup)],
     {ok, {{one_for_one, 10, 10}, Procs}}.
