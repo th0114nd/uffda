@@ -47,7 +47,7 @@ stop() -> application:stop(?MODULE).
 %% @end
 -spec start(any(), any()) -> {ok, pid(), proplists:proplist()}.
 start(_StartType, _StartArgs) -> 
-    {ok, _Pid} = uffda_root_sup:start_link().
+    {ok, _Pid} = uffda_root_sup:start_link([service_registry, rest_api]).
 
 %% @doc
 %%   Stops the application in an OTP environment.
