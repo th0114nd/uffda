@@ -17,7 +17,7 @@ DIALYZER_OPTS := test/uffda -Werror_handling -Wrace_conditions -Wunmatched_retur
 EDOC_DIRS := ["src", "examples", "test/uffda", "test/test_commons"]
 EDOC_OPTS := {preprocess, true}, {source_path, ${EDOC_DIRS}}, nopackages, {subpackages, true}
 
-COMPILE_FIRST := ../test/test_commons/tc_proper_model
+#COMPILE_FIRST := ../test/test_commons/tc_proper_model
 #TEST_ERLC_OPTS := -pa test -pa deps/*/ebin -pa ebin
 DEV_SERVER := erl -pa test -pa deps/*/ebin -pa ebin -smp enable -setcookie CISFORCOOKIE
 RUN_SERVER := erl -pa deps/*/ebin -pa ebin -smp enable -setcookie CISFORCOOKIE
