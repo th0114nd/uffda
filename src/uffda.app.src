@@ -1,0 +1,14 @@
+{application, uffda,
+ [
+  {description, "Uffda Service Registry"},
+  {vsn, "0.1.0"},
+  {id, "uffda"},
+  {registered, [uffda_registry_sup]},
+  {applications, [kernel, stdlib]},
+  {included_applications, [public_key, crypto, ssl, asn1,
+                           cowlib, cowboy]},
+  {mod, {uffda, []}},
+  {modules, []},
+  {env, []}
+ ]
+}.

@@ -1,0 +1,9 @@
+{export, "./uffda/logs/cover"}.
+{level, details}.
+{incl_dirs, ["src/"]}.
+{incl_mods, [
+            uffda_service_fsm,
+            uffda_registry_sup,
+            uffda_client,
+            uffda
+            ]}.

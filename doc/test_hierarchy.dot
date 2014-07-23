@@ -1,0 +1,16 @@
+digraph G {
+       rankdir=LR
+       node [shape = rectangle]
+       system_test -> property_1
+       system_test -> property_2
+       system_test -> property_3
+
+       
+       property_1 -> model_representation_1
+       property_2 -> model_representation_2
+       property_3 -> model_representation_3
+       
+       model_representation_2 -> scenario_2_A
+       model_representation_2 -> scenario_2_B
+       model_representation_2 -> scenario_2_C
+}
