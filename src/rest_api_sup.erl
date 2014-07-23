@@ -2,7 +2,7 @@
 
 -behavior(supervisor).
 
--export([start_link/0, init/1, listen/0]).
+-export([start_link/0, init/1]).
 
 -spec init(term()) -> {ok, {{supervisor:strategy(), non_neg_integer(), non_neg_integer()},
                             [supervisor:child_specs()]}}.
@@ -15,16 +15,6 @@ start_link() ->
 init(_Args) ->
     Ranch_Sup = ?SUPER(ranch_sup, []),
     Cowboy_Sup = ?SUPER(cowboy_sup, []),
-    Begin_Listen = {?MODULE,  {?MODULE, listen, []}, transient, infinity, worker, [?MODULE]},
-    Included_Apps = [Ranch_Sup, Cowboy_Sup, Begin_Listen],
-    {ok, {{rest_for_one, 5, 60}, Included_Apps}}.
-   
-   
-listen() ->
-    Dispatch = cowboy_router:compile([
-        {'_', [
-            {"/", rest_handler, []}
-            ]}
-        ]),
-    {ok, _} = cowboy:start_http(http, 10, [{port, 8000}], [
-        {env, [{dispatch, Dispatch}]}]). 
+    Begin_Listen = {uffda_api_table,  {uffda_api_table, listen, []}, transient, infinity, worker, [uffda_api_table]},
+    Apps_N_Children = [Ranch_Sup, Cowboy_Sup, Begin_Listen],
+    {ok, {{rest_for_one, 5, 60}, Apps_N_Children}}.
