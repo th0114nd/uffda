@@ -28,7 +28,7 @@
 %%   named after its model id.
 %% @end
 get_all_test_model_ids() ->
-    Dir = "./priv/register_name_models/",
+    Dir = code:priv_dir(uffda) ++ "/register_name_models/",
     {ok, Files} = file:list_dir(Dir),
     Pairs = [{filename:rootname(File), filename:absname(Dir ++ File)} || File <- Files],
     [{list_to_atom(Test_Name), {file, Abs_Path}} || {Test_Name, Abs_Path} <- Pairs].
