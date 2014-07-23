@@ -17,7 +17,6 @@ DIALYZER_OPTS := test/uffda -Werror_handling -Wrace_conditions -Wunmatched_retur
 EDOC_DIRS := ["src", "examples", "test/uffda", "test/test_commons"]
 EDOC_OPTS := {preprocess, true}, {source_path, ${EDOC_DIRS}}, nopackages, {subpackages, true}
 
-COMPILE_FIRST := ../test/test_commons/tc_proper_model
 #TEST_ERLC_OPTS := -pa test -pa deps/*/ebin -pa ebin
 DEV_SERVER := erl -pa test -pa deps/*/ebin -pa ebin -smp enable -setcookie CISFORCOOKIE
 RUN_SERVER := erl -pa deps/*/ebin -pa ebin -smp enable -setcookie CISFORCOOKIE
@@ -42,7 +41,7 @@ relxrun: release
 images: doc
 	mkdir -p doc/images
 	dot -Tpng doc/states.dot -o doc/images/states.png
-	dot -Tpng doc/tc_proper_model_behaviour.dot -o doc/images/tc_proper_model_behaviour.png
+	dot -Tpng doc/tcb_model.dot -o doc/images/tcb_model.png
 	dot -Tpng doc/unify.dot -o doc/images/unify.png
 	dot -Tpng doc/test_hierarchy.dot -o doc/images/test_hierarchy.png
 

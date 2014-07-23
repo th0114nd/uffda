@@ -12,7 +12,6 @@
          passed_test_case/3
         ]).
 
-%-include("tc_proper_model.hrl").
 -include_lib("test_commons/include/tcb.hrl").
 
 -spec get_all_test_model_ids() -> [{Model_Id :: tcb_model_id(), Source :: tcb_model_source()}].
