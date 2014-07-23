@@ -2,4 +2,4 @@
 
 -export([dt/0]).
 
-dt() -> [{"/", rest_handler, []}].
+dt() -> [{"/", uffda_rest_handler, []}].

@@ -1,4 +1,4 @@
--module(rest_api_sup).
+-module(uffda_api_sup).
 
 -behavior(supervisor).
 

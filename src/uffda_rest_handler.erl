@@ -1,4 +1,4 @@
--module(rest_handler).
+-module(uffda_rest_handler).
 
 %% Cowboy REST callbacks
 -export([init/3,
