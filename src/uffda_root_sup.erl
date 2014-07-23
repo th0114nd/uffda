@@ -1,27 +1,16 @@
 -module(uffda_root_sup).
 -behavior(supervisor).
 
--export([start_link/1, init/1, run_prog/0]).
--export([service_registry/0, prog_tree_test/0, rest_api/0]).
+-export([start_link/0, init/1]).
 -define(SUPER, ?MODULE).
--define(CHILD(__Mod, __Args), {__Mod, {__Mod, start_link, __Args},
+-define(CHILD(__Mod), {__Mod, {__Mod, start_link, []},
                                permanent, 2000, worker, [__Mod]}).
--spec start_link([atom()]) -> {ok, pid()}.
-start_link(Enabled) 
-  when is_list(Enabled) ->
-    supervisor:start_link({local, ?SUPER}, ?MODULE, Enabled).
+-spec start_link() -> {ok, pid()}.
+start_link() ->
+    supervisor:start_link({local, ?SUPER}, ?MODULE, {}).
 
--spec init(Enabled :: [atom()]) -> {ok, {{supervisor:strategy(), non_neg_integer(), non_neg_integer()},
+-spec init({}) -> {ok, {{supervisor:strategy(), non_neg_integer(), non_neg_integer()},
                                                   [supervisor:child_spec()]}}.
-init(Enabled) 
-  when is_list(Enabled) ->
-    Procs = [?MODULE:Enable() || Enable <- Enabled],
+init({}) ->
+    Procs = [?CHILD(uffda_registry_sup), ?CHILD(rest_api_sup)],
     {ok, {{one_for_one, 10, 10}, Procs}}.
-
--spec service_registry() -> supervisor:child_spec().
-service_registry() ->
-    ?CHILD(uffda_registry_sup, []).
-
--spec rest_api() -> supervisor:child_spec().
-rest_api() ->
-    ?CHILD(rest_api_sup, []).
