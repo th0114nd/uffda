@@ -13,6 +13,7 @@ dep_test_commons = https://github.com/th0114nd/test_commons
 CT_OPTS := -cover test/uffda.coverspec
 CT_SUITES := uffda_registry uffda_service uffda_system
 
+PLT_APPS := compiler crypto
 DIALYZER_OPTS := test/uffda -Werror_handling -Wrace_conditions -Wunmatched_returns
 EDOC_DIRS := ["src", "examples", "test/uffda", "test/test_commons"]
 EDOC_OPTS := {preprocess, true}, {source_path, ${EDOC_DIRS}}, nopackages, {subpackages, true}
