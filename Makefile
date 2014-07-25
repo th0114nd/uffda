@@ -6,7 +6,7 @@ dep_eper =  pkg://eper 0.85.0
 
 TEST_DEPS = proper test_commons
 dep_proper = pkg://proper v1.1
-dep_test_commons = https://github.com/th0114nd/test_commons/ rename
+dep_test_commons = https://github.com/th0114nd/test_commons/
 
 
 # Needed for testing
