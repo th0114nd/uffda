@@ -33,7 +33,7 @@ get_all_test_model_ids() ->
     Pairs = [{filename:rootname(File), filename:absname(Dir ++ File)} || File <- Files],
     [{list_to_atom(Test_Name), {file, Abs_Path}} || {Test_Name, Abs_Path} <- Pairs].
 
--spec transform_raw_scenario(pos_integer(), atom()) -> scenev_scenario().
+-spec transform_raw_scenario(pos_integer(), atom()) -> {single, scenev_scenario()}.
 %% @doc
 %%   Raw scenarios are created by reading the corresponding test model file.
 %%   All register_model names are atoms. They are converted to scenev_scenario()
@@ -41,8 +41,8 @@ get_all_test_model_ids() ->
 %% @end
 transform_raw_scenario(Scenario_Number, Service_Name)
   when is_atom(Service_Name), is_integer(Scenario_Number), Scenario_Number > 0 ->
-    #scenev_scenario{instance = Scenario_Number, scenario_desc = Service_Name,
-                        initial_status = [], events = ?EVENTS}.
+    {single, #scenev_scenario{instance = Scenario_Number, scenario_desc = Service_Name,
+                        initial_status = [], events = ?EVENTS}}.
 
 -spec deduce_expected(Scenario_Instance :: scenev_scenario()) -> Expected_Status :: term().
 %% @doc
@@ -51,13 +51,16 @@ transform_raw_scenario(Scenario_Number, Service_Name)
 %%   the given Service_Name for each register event and removing it for each
 %%   unregister event.
 %% @end
-deduce_expected(#scenev_scenario{} = Scenario) ->
-    #scenev_scenario{instance=_Inst, scenario_desc=Desc, initial_status=Init_Status, events=Events} = Scenario,
-    try   deduce(Desc, Init_Status, Events)
-    catch Error:Type -> error_logger:error_msg("Caught ~p error in ~p:deduce/3 ~p",
-                                               [{Error, Type}, ?MODULE, erlang:get_stacktrace()]),
-                        failed
-    end.
+deduce_expected(#scenev_scenario{scenario_desc=Desc, events=Events} = Scenario) ->
+    {_, Output}
+        = lists:foldl(fun(Event, {RegisteredService, Results}) ->
+                              case Event of
+                                  register       -> {[Desc],            [ok                | Results]};
+                                  unregister     -> {[],                [ok                | Results]};
+                                  which_services -> {RegisteredService, [RegisteredService | Results]}
+                              end
+                      end, {[], []}, Events), 
+    lists:reverse(Output).
     
 -spec vivify_scenario(Scenario :: scenev_scenario()) -> scenev_live_ref().
 %% @doc
@@ -118,13 +121,3 @@ passed_test_case(_Case_Number, Expected_Status, Observed_Status) ->
 %%--------------------------------
 %% Support functions
 %%--------------------------------
-deduce(Desc, _Init_Status, Events) ->
-    {_, Output}
-        = lists:foldl(fun(Event, {RegisteredService, Results}) ->
-                              case Event of
-                                  register       -> {[Desc],            [ok                | Results]};
-                                  unregister     -> {[],                [ok                | Results]};
-                                  which_services -> {RegisteredService, [RegisteredService | Results]}
-                              end
-                      end, {[], []}, Events), 
-    lists:reverse(Output).
