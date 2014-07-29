@@ -21,7 +21,7 @@
 
 -define(EVENTS, [which_services, register, which_services, unregister, which_services]).
 
--spec get_all_test_model_ids() -> [{Model_Id :: scenev_model_id(), Source :: scenev_model_source()}].
+-spec get_all_test_model_ids() -> [{Model_Id :: scenev_model_id(), Source :: scenev_source()}].
 %% @doc
 %%   Test models are stored as static data files containing atom names to be
 %%   registered as an Uffda Service Name. Each test model is stored in a file
@@ -51,7 +51,7 @@ transform_raw_scenario(Scenario_Number, Service_Name)
 %%   the given Service_Name for each register event and removing it for each
 %%   unregister event.
 %% @end
-deduce_expected(#scenev_scenario{scenario_desc=Desc, events=Events} = Scenario) ->
+deduce_expected(#scenev_scenario{scenario_desc=Desc, events=Events} = _Scenario) ->
     {_, Output}
         = lists:foldl(fun(Event, {RegisteredService, Results}) ->
                               case Event of
@@ -101,8 +101,7 @@ call_uffda_client(_Service_Name, which_services) -> uffda_client:which_services 
 %%   order to capture each return value and to place the Uffda service registry
 %%   into the final state from which system status can be read.
 %% @end
-generate_observation(_Live_Model_Ref, #scenev_test_case{scenario=Scenario} = _Test_Case_Instance) ->
-    #scenev_scenario{scenario_desc=Service_Name, events=Events} = Scenario,
+generate_observation(#scenev_scenario{scenario_desc = Service_Name, events = Events} = _Scenario, _Live_Model_Ref) ->
     [call_uffda_client(Service_Name, Event) || Event <- Events].
 
 -spec passed_test_case(Case_Number     :: pos_integer(),

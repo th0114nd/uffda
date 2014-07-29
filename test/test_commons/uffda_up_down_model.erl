@@ -4,8 +4,7 @@
 -include_lib("test_commons/include/scenev.hrl").
 %% Generate scenev_model and expected outcomes.
 -export([get_all_test_model_ids/0,
-         generate_model/2,
-         deduce_expected_status/1]).
+         deduce_expected/1]).
 
 %% Used per scenario when validating against the common behavior model.
 -export([vivify_scenario/1,
@@ -18,12 +17,6 @@
 %% Returns a list of test model ids.
 -spec get_all_test_model_ids() -> [scenev_model_id()].%, tc_model_source()].
 get_all_test_model_ids() -> [].
-
-%% Generates a common behavior model from an id and a source.
--spec generate_model(scenev_model_id(), scenev_model_source()) ->
-    scenev_model().
-generate_model(_Id, _Source) ->
-    #scenev_model{}.
 
 %%------------------------------------------------------------------------
 %% SIMULATING A TRANSITION SEQUENCE
@@ -44,6 +37,10 @@ state_change(_, unregister) -> killed;
 state_change(killed, _) -> killed;
 state_change(State, _) -> State.
 
+-spec transform_raw_scenario(pos_integer(), term()) -> {single, scenev_scenario()}.
+transform_raw_scenario(Id, RS) ->
+    {single, #scenev_scenario{instance = Id, scenario_desc = RS, initial_status = [], events = []}}.
+
 %% Applies state_change to leaf node or evaluates subtree.
 transition({{leaf, {supervisor, _}}, _} = Program) -> Program;
 transition({{leaf, Leaf}, Events}) ->
@@ -61,8 +58,8 @@ translate_tree({Tree, Events}) ->
     NewTree = {node, Parent, lists:map(fun(Child) -> transition({Child, Events}) end, Children)},
     {NewTree, Events}.
 
--spec deduce_expected_status(scenev_scenario()) -> term(). 
-deduce_expected_status(#scenev_scenario{scenario_desc = Scenario} = _TCPS) ->
+-spec deduce_expected(scenev_scenario()) -> term(). 
+deduce_expected(#scenev_scenario{scenario_desc = Scenario} = _TCPS) ->
     translate_tree(extract_tree_and_events(Scenario)).
 
 %%---------------------------------------------------------------------
