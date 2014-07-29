@@ -200,6 +200,7 @@ register_one_name(Type) ->
                            end)),
     true = proper:quickcheck(Name_Test, ?PQ_NUM(100)).
 
+-spec atom_list(alpha | atom) -> proper_types:type().
 atom_list(alpha) -> list(range(65,90));
 atom_list(atom)  -> atom().
     

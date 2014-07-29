@@ -45,7 +45,7 @@ stop() -> application:stop(?MODULE).
 %%   Starts the application in an OTP environment. Currently uffda
 %%   is not expected to be run as a distributed erlang application.
 %% @end
--spec start(any(), any()) -> {ok, pid(), proplists:proplist()}.
+-spec start(any(), any()) -> {ok, pid()}.
 start(_StartType, _StartArgs) -> 
     {ok, _Pid} = uffda_root_sup:start_link().
 

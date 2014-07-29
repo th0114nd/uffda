@@ -7,7 +7,9 @@ begin_http() ->
         uffda_api_table:dt()
     }]),
     {ok, _Pid} = cowboy:start_http(uffda_cowboy_http, 10, [{port, 8000}], [
-        {env, [{dispatch, Dispatch}]}]).
+        {env, [{dispatch, Dispatch}]}]),
+    ok.
+
 
 -spec end_http() -> ok.
 end_http() ->
