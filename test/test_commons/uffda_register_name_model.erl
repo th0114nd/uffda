@@ -10,6 +10,7 @@
          get_all_test_model_ids/0,
          deduce_expected/1,
          vivify_scenario/1,
+         murder_scenario/1,
          transform_raw_scenario/2,
          translate_dsl/1,
          translate_events/1,
@@ -29,9 +30,7 @@
 %% @end
 get_all_test_model_ids() ->
     Dir = code:priv_dir(uffda) ++ "/register_name_models/",
-    {ok, Files} = file:list_dir(Dir),
-    Pairs = [{filename:rootname(File), filename:absname(Dir ++ File)} || File <- Files],
-    [{list_to_atom(Test_Name), {file, Abs_Path}} || {Test_Name, Abs_Path} <- Pairs].
+    [{filename:rootname(Dir), {dir, Dir}}].
 
 -spec transform_raw_scenario(pos_integer(), atom()) -> {single, scenev_scenario()}.
 %% @doc
@@ -70,6 +69,9 @@ deduce_expected(#scenev_scenario{scenario_desc=Desc, events=Events} = _Scenario)
 %% @end
 vivify_scenario(#scenev_scenario{} = _Scenario) ->
     uffda_registry_sup.
+
+-spec murder_scenario(scenev_live_ref()) -> ok.
+murder_scenario(uffda_registry_sup) -> ok.
 
 -spec translate_dsl(scenev_dsl_desc()) -> scenev_live_desc().
 %% @doc
