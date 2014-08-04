@@ -9,8 +9,6 @@
 -export([
          get_all_test_model_ids/0,
          deduce_expected/1,
-         vivify_scenario/1,
-         murder_scenario/1,
          transform_raw_scenario/2,
          translate_dsl/1,
          translate_events/1,
@@ -61,18 +59,6 @@ deduce_expected(#scenev_scenario{scenario_desc=Desc, events=Events} = _Scenario)
                       end, {[], []}, Events), 
     lists:reverse(Output).
     
--spec vivify_scenario(Scenario :: scenev_scenario()) -> scenev_live_ref().
-%% @doc
-%%   No live scenario elements need to be set up since the Uffda service registry
-%%   is maintained by a single registry supervisor. This function just returns the
-%%   name of the uffda_registry_sup.
-%% @end
-vivify_scenario(#scenev_scenario{} = _Scenario) ->
-    uffda_registry_sup.
-
--spec murder_scenario(scenev_live_ref()) -> ok.
-murder_scenario(uffda_registry_sup) -> ok.
-
 -spec translate_dsl(scenev_dsl_desc()) -> scenev_live_desc().
 %% @doc
 %%   No Domain Specific Language (DSL) is needed for this test, so the existing
@@ -97,13 +83,13 @@ call_uffda_client( Service_Name, register)       -> uffda_client:register_servic
 call_uffda_client( Service_Name, unregister)     -> uffda_client:unregister_service (Service_Name);
 call_uffda_client(_Service_Name, which_services) -> uffda_client:which_services     ().
 
--spec generate_observation(scenev_live_ref(), scenev_test_case()) -> term().
+-spec generate_observation([scenev_scenario()]) -> term().
 %% @doc
 %%   The system is observed by executing the translated event closures in serial
 %%   order to capture each return value and to place the Uffda service registry
 %%   into the final state from which system status can be read.
 %% @end
-generate_observation(#scenev_scenario{scenario_desc = Service_Name, events = Events} = _Scenario, _Live_Model_Ref) ->
+generate_observation(#scenev_scenario{scenario_desc = Service_Name, events = Events} = _Scenario) ->
     [call_uffda_client(Service_Name, Event) || Event <- Events].
 
 -spec passed_test_case(Case_Number     :: pos_integer(),
@@ -117,7 +103,6 @@ generate_observation(#scenev_scenario{scenario_desc = Service_Name, events = Eve
 %% @end
 passed_test_case(_Case_Number, Expected_Status, Observed_Status) ->
     Expected_Status =:= Observed_Status.
-
 
 %%--------------------------------
 %% Support functions
