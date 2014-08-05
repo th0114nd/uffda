@@ -163,7 +163,7 @@ verify_register_service_name(_Config) ->
 
 prop_register_simple_name() ->
     ok = uffda:start(),
-    try Model_Result_Pairs = scenev:test_all_models(uffda_register_name_model),
+    try Model_Result_Pairs = tc_proper_model:test_all_models(uffda_register_name_model),
         Results = [Res || {_Id, Res} <- Model_Result_Pairs],
         lists:all(fun({Passed, _Num_Passed, _Failures}) -> Passed end, Results)
     %try register_one_name(alpha)
@@ -200,7 +200,6 @@ register_one_name(Type) ->
                            end)),
     true = proper:quickcheck(Name_Test, ?PQ_NUM(100)).
 
--spec atom_list(alpha | atom) -> proper_types:type().
 atom_list(alpha) -> list(range(65,90));
 atom_list(atom)  -> atom().
     
