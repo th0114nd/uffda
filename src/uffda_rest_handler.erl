@@ -4,56 +4,96 @@
 -export([init/3,
          rest_init/2,
          allowed_methods/2,
+         output_plain_text/2,
          resource_exists/2,
+         delete_resource/2,
          content_types_provided/2,
          terminate/3]).
 
 %% Calls to uffda
--export([which_services/2,
-         service_status/2,
-         hello_to_text/2
+-export([which_services/0,
+         service_status/1,
+         delete_service/1
         ]).
 
 -record(state,
-        {fn :: atom()}).
+        {name :: atom(),
+        method :: binary()}).
+
+%%---------------------------------------------------------------------------------------
+%% Cowboy REST callbacks
+%%---------------------------------------------------------------------------------------
 
 init(_Transport, _Req, _Opts) ->
     {upgrade, protocol, cowboy_rest}.
 
-rest_init(Req, [Function]) ->
-    {ok, Req, #state{fn = Function}}.
+rest_init(Req, []) ->
+    {Service_Bin, _} = cowboy_req:binding(name, Req),
+    Name = case Service_Bin of
+               undefined -> undefined;
+               _ -> binary_to_atom(Service_Bin, latin1)
+           end,
+    {Method_Bin, _} = cowboy_req:method(Req),
+    Method = binary_to_atom(Method_Bin, latin1),
+    {ok, Req, #state{name = Name, method = Method}}.
 
 allowed_methods(Req, State) ->
-    {[<<"GET">>], Req, State}.
+    {[<<"GET">>, <<"DELETE">>], Req, State}.
 
 resource_exists(Req, State) ->
-    {Service_Bin, Req2} = cowboy_req:binding(name, Req),
-    Status = 
-        case Service_Bin of 
-            undefined -> undefined;
-            _ -> uffda_client:service_status(binary_to_atom(Service_Bin, latin1))
-        end,
-    case Status of
-        {error, _} -> {false, Req2, State};
-        _ -> {true, Req2, State}
-    end.
+    {valid_name_method_conf(State#state.name, State#state.method), Req, State}. 
 
 content_types_provided(Req, State) ->
     {[
-        {<<"text/plain">>, State#state.fn}
+        {<<"text/plain">>, output_plain_text}
     ], Req, State}.
 
-which_services(Req, State) ->
-    IO_Services_List = [atom_to_list(Service) ++ "\n" || Service <- uffda_client:which_services()],
-    {list_to_binary(IO_Services_List), Req, State}.
-
-service_status(Req, State) ->
-    {Service_Bin, Req2} = cowboy_req:binding(name, Req),
-    Service_Name = binary_to_atom(Service_Bin, latin1),
-    {list_to_binary(atom_to_list(uffda_client:service_status(Service_Name)) ++ "\n"), Req2, State}.
-
-hello_to_text(Req, State) ->
-    {<<"Hello World!\n">>, Req, State}.
+delete_resource(Req, State) ->
+    dispatch_on_method(State#state.name, State#state.method),
+    {not service_exists(State#state.name), Req, State}.
 
 terminate(_Reason, _Req, _State) ->
     ok.
+%%------------------------------------------------------------------------------------
+%% Communication with uffda
+%%------------------------------------------------------------------------------------
+
+which_services() ->
+    [[atom_to_list(Service)|["\n"]] || Service <- uffda_client:which_services()].
+
+service_status(Name) ->
+    [atom_to_list(uffda_client:service_status(Name))|["\n"]].
+
+delete_service(Name) ->
+    [atom_to_list(uffda_client:unregister_service(Name))|["\n"]].
+
+service_exists(Name) ->
+    lists:any(fun(Service) -> Name =:= Service end, uffda_client:which_services()). 
+
+%%------------------------------------------------------------------------------------
+%% IO formats
+%%------------------------------------------------------------------------------------
+
+output_plain_text(Req, State) ->
+    Response = dispatch_on_method(State#state.name, State#state.method),
+    {list_to_binary(Response), Req, State}.
+
+%%------------------------------------------------------------------------------------
+%% Support functions
+%%------------------------------------------------------------------------------------
+
+dispatch_on_method(undefined, 'GET') ->
+    which_services();
+dispatch_on_method(Name, 'GET') ->
+    service_status(Name);
+dispatch_on_method(Name, 'DELETE') ->
+    delete_service(Name).
+
+valid_name_method_conf(undefined, 'GET') -> true;
+valid_name_method_conf(_, 'PUT') -> true;
+valid_name_method_conf(Name, 'DELETE') ->
+    service_exists(Name);
+valid_name_method_conf(Name, 'POST') ->
+    service_exists(Name);
+valid_name_method_conf(Name, 'GET') ->
+    service_exists(Name).

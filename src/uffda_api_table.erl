@@ -5,9 +5,7 @@
 listen() ->
     Dispatch = cowboy_router:compile([
         {'_', [
-            {<<"/uffda-services">>, uffda_rest_handler, [which_services]},
-            {<<"/uffda-services/hello">>, uffda_rest_handler, [hello_to_text]},
-            {<<"/uffda-services/:name">>, uffda_rest_handler, [service_status]}
+            {<<"/uffda-services/[:name]">>, uffda_rest_handler, []}
             ]}
         ]),
     {ok, _} = cowboy:start_http(http, 10, [{port, 8000}], [
