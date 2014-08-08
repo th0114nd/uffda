@@ -12,7 +12,7 @@
 start_link() ->
     gen_event:start_link({local, ?PUBLISH_MGR}).
 
--spec find_vars(sub_type(), address(), service_name()) -> {state(), {term(), atom()}}.
+-spec find_vars(sub_type(), address(), service_name()) -> {state(), {atom(), term()}}.
 find_vars(Sub_Type, Return_Address, Service) ->
     Id = State = {Return_Address, Service},
     CB_Module = case Sub_Type of
