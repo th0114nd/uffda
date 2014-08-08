@@ -4,14 +4,11 @@
 -include_lib("test_commons/include/scenev.hrl").
 %% Generate scenev_model and expected outcomes.
 -export([get_all_test_model_ids/0,
-         deduce_expected/1]).
-
-%% Used per scenario when validating against the common behavior model.
--export([vivify_scenario/1,
-         translate_dsl/1,
-         translate_events/1,
-         generate_observation/2,
+         deduce_expected/1,
+         transform_raw_scenario/2,
+         generate_observation/1,
          passed_test_case/3]).
+%% Used per scenario when validating against the common behavior model.
 
 
 %% Returns a list of test model ids.
@@ -66,10 +63,6 @@ deduce_expected(#scenev_scenario{scenario_desc = Scenario} = _TCPS) ->
 %% A LIVE TRANSITION SEQUENCE
 %%---------------------------------------------------------------------
 
-%% Uses DSL to instantiate a real program.
--spec vivify_scenario(scenev_scenario()) -> scenev_live_ref().
-vivify_scenario(_Scenario) ->
-    #scenev_scenario{}. 
 
 -spec translate_dsl(scenev_dsl_desc()) -> 
     scenev_live_desc().
@@ -80,11 +73,10 @@ translate_dsl(_DSL_Desc) -> ok.
 translate_events(_DSL_Events) -> ok.
 
 %% Generates an observation by running events on live program.
--spec generate_observation(scenev_live_ref(), scenev_test_case()) -> term().
-generate_observation(_Live_Model_Ref, #scenev_test_case{} = _Test_Case_Instance) ->
+-spec generate_observation(scenev_scenario()) -> term().
+generate_observation(#scenev_scenario{} = _Scenario) ->
     success.
 
 %% Compares the expected results with live program results.
--spec passed_test_case(pos_integer(), scenev_dsl_status(),
-                              scenev_live_status()) -> boolean().
+-spec passed_test_case(pos_integer(), scenev_expected_status(), scenev_observed_status()) -> boolean().
 passed_test_case(_CaseNumber, _ExpectedStatus, _ObservedStatus) -> true.
