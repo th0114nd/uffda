@@ -1,43 +1,36 @@
 -module(uffda_subscription).
 
--behaviour(gen_server).
-
 -export([start_link/0,
-         ping/0]).
+         subscribe/3,
+         unsubscribe/3,
+         notify/2]).
 
-%% gen_server callbacks
--export([init/1,
-         handle_call/3,
-         handle_cast/2,
-         handle_info/2,
-         terminate/2,
-         code_change/3]).
+-include("uffda.hrl").
+-include("uffda_sub.hrl").
 
--record(state, {}).
--define(SUBSCRIBER, ?MODULE).
-
+-spec start_link() -> {ok, pid()} | {error, {already_started, pid()}}.
 start_link() ->
-    gen_server:start_link({local, ?SUBSCRIBER}, ?MODULE, [], []).
+    gen_event:start_link({local, ?PUBLISH_MGR}).
 
-ping() ->
-    gen_server:call(ping, ?SUBSCRIBER).
+-spec find_vars(sub_type(), address(), service_name()) -> {state(), {term(), atom()}}.
+find_vars(Sub_Type, Return_Address, Service) ->
+    Id = State = {Return_Address, Service},
+    CB_Module = case Sub_Type of
+        pid -> uffda_pid_publisher;
+        sse -> uffda_sse_publisher
+        end,
+    {State, {CB_Module, Id}}.
 
-init([]) ->
-    {ok, #state{}}.
+-spec subscribe(sub_type(), address(), service_name()) -> ok.
+subscribe(Sub_Type, Return_Address, Service) ->
+    {State, Handler} = find_vars(Sub_Type, Return_Address, Service),
+    gen_event:add_handler(?PUBLISH_MGR, Handler, State).
 
-handle_call(ping, _From, State) ->
-    {reply, pong, State}.
+-spec unsubscribe(sub_type(), address(), service_name()) -> term().
+unsubscribe(Sub_Type, Return_Address, Service) ->
+    {_State, Handler} = find_vars(Sub_Type, Return_Address, Service),
+    gen_event:delete_handler(?PUBLISH_MGR, Handler, {}).
 
-handle_cast(_Msg, State) ->
-    {noreply, State}.
-
-handle_info(_Info, State) ->
-    {noreply, State}.
-
-terminate(_Reason, _State) ->
-    ok.
-
-code_change(_OldVsn, State, _Extra) ->
-    {ok, State}.
-
-%% Internal functions
+-spec notify(service_name(), service_status()) -> ok.
+notify(Service, Status) ->
+    gen_event:notify(?PUBLISH_MGR, {publish, Service, Status}).
