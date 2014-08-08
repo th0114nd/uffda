@@ -362,5 +362,7 @@ status(?up)              -> up.
 
 
 -spec notify_wrap(term()) -> term().
-notify_wrap(A) -> A.
+notify_wrap({next_state, _, _} = A) -> A;
+notify_wrap({next_state, _, _, _} = A) -> A;
+notify_wrap({ok, _, _} = A) -> A.
 
