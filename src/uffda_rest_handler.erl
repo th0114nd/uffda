@@ -1,4 +1,5 @@
 -module(uffda_rest_handler).
+-author('pierce.mt92@gmail.com').
 
 %% Cowboy REST callbacks
 -export([init/3,
@@ -84,15 +85,15 @@ add_service(Name) ->
 update_service_status(Name, <<"start">>, Body) ->
     case proplists:get_value(<<"timeout">>, Body) of
         Timeout when is_number(Timeout) -> uffda_client:starting_service(Name, Timeout);
-        _ -> uffda_client:starting_service(Name)
+        undefined -> uffda_client:starting_service(Name)
     end,
     uffda_client:service_status(Name) =:= 'starting_up';
 update_service_status(Name, <<"set_online">>, _) ->
     uffda_client:set_service_online(Name),
-    uffda_client:service_status(Name) =:= 'online';
+    uffda_client:service_status(Name) =:= 'up';
 update_service_status(Name, <<"set_offline">>, _) ->
     uffda_client:set_service_offline(Name),
-    uffda_client:service_status(Name) =:= 'offline'.
+    uffda_client:service_status(Name) =:= 'down'.
 
 -spec service_exists(atom()) -> boolean().
 service_exists(Name) ->
@@ -155,7 +156,7 @@ valid_name_method_conf(Name, <<"GET">>) ->
 
 -spec validate_body(proplists:proplist()) -> boolean().
 validate_body(Body) ->
-    proplists:is_defined(<<"update">>) andalso
+    proplists:is_defined(<<"update">>, Body) andalso
     (proplists:get_value(<<"update">>, Body) =:= <<"start">> orelse 
      proplists:get_value(<<"update">>, Body) =:= <<"set_online">> orelse
      proplists:get_value(<<"update">>, Body) =:= <<"set_offline">>).
