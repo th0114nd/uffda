@@ -11,9 +11,9 @@
          deduce_expected_status/1,
          vivify_scenario/1,
          transform_raw_scenario/2,
-         translate_scenario_dsl/1,
-         translate_scenario_events/1,
-         generate_observation/2,
+         translate_dsl/1,
+         translate_events/1,
+         generate_observation/1,
          passed_test_case/3
         ]).
 
@@ -92,7 +92,7 @@ call_uffda_client( Service_Name, register)       -> uffda_client:register_servic
 call_uffda_client( Service_Name, unregister)     -> uffda_client:unregister_service (Service_Name);
 call_uffda_client(_Service_Name, which_services) -> uffda_client:which_services     ().
 
--spec generate_observation(tcb_scenario_live_ref(), tcb_test_case()) -> term().
+-spec generate_observation(scenev_scenario()) -> term().
 %% @doc
 %%   The system is observed by executing the translated event closures in serial
 %%   order to capture each return value and to place the Uffda service registry
@@ -103,8 +103,8 @@ generate_observation(_Live_Model_Ref, #tcb_test_case{scenario=Scenario} = _Test_
     [call_uffda_client(Service_Name, Event) || Event <- Events].
 
 -spec passed_test_case(Case_Number     :: pos_integer(),
-                              Expected_Status :: tcb_scenario_dsl_status(),
-                              Observed_Status :: tcb_scenario_live_status()) -> boolean().
+                       scenev_expected_status(),
+                       scenev_observed_status()) -> boolean().
 %% @doc
 %%   A test case passes when each of the return values match after each event
 %%   executes. The expected and observered lists are arranged to be time-ordered

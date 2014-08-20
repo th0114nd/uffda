@@ -4,15 +4,11 @@
 -include_lib("test_commons/include/tcb.hrl").
 %% Generate tcb_model and expected outcomes.
 -export([get_all_test_model_ids/0,
-         generate_model/2,
-         deduce_expected_status/1]).
-
+         deduce_expected/1,
+         transform_raw_scenario/2,
+         generate_observation/1,
+         passed_test_case/3]).
 %% Used per scenario when validating against the common behavior model.
--export([vivify_scenario/1,
-        translate_scenario_dsl/1,
-        translate_scenario_events/1,
-        generate_observation/2,
-        passed_test_case/3]).
 
 
 %% Returns a list of test model ids.
@@ -69,11 +65,6 @@ deduce_expected_status(#tcb_scenario{scenario_desc = Scenario} = _TCPS) ->
 %% A LIVE TRANSITION SEQUENCE
 %%---------------------------------------------------------------------
 
-%% Uses DSL to instantiate a real program.
--spec vivify_scenario(tcb_scenario()) -> tcb_scenario_live_ref().
-vivify_scenario(_Scenario) ->
-    #tcb_scenario{}. 
-
 -spec translate_scenario_dsl(tcb_scenario_dsl_desc()) -> 
     tcb_scenario_live_desc().
 translate_scenario_dsl(_DSL_Desc) -> ok.
@@ -83,11 +74,10 @@ translate_scenario_dsl(_DSL_Desc) -> ok.
 translate_scenario_events(_DSL_Events) -> ok.
 
 %% Generates an observation by running events on live program.
--spec generate_observation(tcb_scenario_live_ref(), tcb_test_case()) -> term().
-generate_observation(_Live_Model_Ref, #tcb_test_case{} = _Test_Case_Instance) ->
+-spec generate_observation(scenev_scenario()) -> term().
+generate_observation(#scenev_scenario{} = _Scenario) ->
     success.
 
 %% Compares the expected results with live program results.
--spec passed_test_case(pos_integer(), tcb_scenario_dsl_status(),
-                              tcb_scenario_live_status()) -> boolean().
+-spec passed_test_case(pos_integer(), scenev_expected_status(), scenev_observed_status()) -> boolean().
 passed_test_case(_CaseNumber, _ExpectedStatus, _ObservedStatus) -> true.
