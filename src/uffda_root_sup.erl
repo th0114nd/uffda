@@ -1,14 +1,13 @@
 -module(uffda_root_sup).
 -behavior(supervisor).
 
--export([start_link/1, init/1]).
+-export([start_link/0, init/1]).
 -define(SUPER, ?MODULE).
 -define(CHILD(__Mod), {__Mod, {__Mod, start_link, []},
                                permanent, 2000, worker, [__Mod]}).
--spec start_link([atom()]) -> {ok, pid()}.
-start_link(Enabled) 
-  when is_list(Enabled) ->
-    supervisor:start_link({local, ?SUPER}, ?MODULE, Enabled).
+-spec start_link() -> {ok, pid()}.
+start_link() ->
+    supervisor:start_link({local, ?SUPER}, ?MODULE, {}).
 
 -spec init({}) -> {ok, {{supervisor:strategy(), non_neg_integer(), non_neg_integer()},
                         [supervisor:child_spec()]}}.
