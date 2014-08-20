@@ -1,8 +1,8 @@
 -module(uffda_up_down_model).
--behavior(tcb_model).
+-behavior(scenev).
 
--include_lib("test_commons/include/tcb.hrl").
-%% Generate tcb_model and expected outcomes.
+-include_lib("test_commons/include/scenev.hrl").
+%% Generate scenev_model and expected outcomes.
 -export([get_all_test_model_ids/0,
          deduce_expected/1,
          transform_raw_scenario/2,
@@ -12,14 +12,8 @@
 
 
 %% Returns a list of test model ids.
--spec get_all_test_model_ids() -> [tcb_model_id()].%, tc_model_source()].
+-spec get_all_test_model_ids() -> [scenev_model_id()].%, tc_model_source()].
 get_all_test_model_ids() -> [].
-
-%% Generates a common behavior model from an id and a source.
--spec generate_model(tcb_model_id(), tcb_model_source()) ->
-    tcb_model().
-generate_model(_Id, _Source) ->
-    #tcb_model{}.
 
 %%------------------------------------------------------------------------
 %% SIMULATING A TRANSITION SEQUENCE
@@ -40,6 +34,10 @@ state_change(_, unregister) -> killed;
 state_change(killed, _) -> killed;
 state_change(State, _) -> State.
 
+-spec transform_raw_scenario(pos_integer(), term()) -> {single, scenev_scenario()}.
+transform_raw_scenario(Id, RS) ->
+    {single, #scenev_scenario{instance = Id, scenario_desc = RS, initial_status = [], events = []}}.
+
 %% Applies state_change to leaf node or evaluates subtree.
 transition({{leaf, {supervisor, _}}, _} = Program) -> Program;
 transition({{leaf, Leaf}, Events}) ->
@@ -57,21 +55,21 @@ translate_tree({Tree, Events}) ->
     NewTree = {node, Parent, lists:map(fun(Child) -> transition({Child, Events}) end, Children)},
     {NewTree, Events}.
 
--spec deduce_expected_status(tcb_scenario()) -> term(). 
-deduce_expected_status(#tcb_scenario{scenario_desc = Scenario} = _TCPS) ->
+-spec deduce_expected(scenev_scenario()) -> term(). 
+deduce_expected(#scenev_scenario{scenario_desc = Scenario} = _TCPS) ->
     translate_tree(extract_tree_and_events(Scenario)).
 
 %%---------------------------------------------------------------------
 %% A LIVE TRANSITION SEQUENCE
 %%---------------------------------------------------------------------
 
--spec translate_scenario_dsl(tcb_scenario_dsl_desc()) -> 
-    tcb_scenario_live_desc().
-translate_scenario_dsl(_DSL_Desc) -> ok.
+-spec translate_dsl(scenev_dsl_desc()) -> 
+    scenev_live_desc().
+translate_dsl(_DSL_Desc) -> ok.
 
--spec translate_scenario_events(tcb_scenario_dsl_events()) ->
-    tcb_scenario_live_events().
-translate_scenario_events(_DSL_Events) -> ok.
+-spec translate_events(scenev_dsl_events()) ->
+    scenev_live_events().
+translate_events(_DSL_Events) -> ok.
 
 %% Generates an observation by running events on live program.
 -spec generate_observation(scenev_scenario()) -> term().

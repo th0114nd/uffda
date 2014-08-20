@@ -19,8 +19,8 @@ EDOC_OPTS := {preprocess, true}, {source_path, ${EDOC_DIRS}}, nopackages, {subpa
 
 #COMPILE_FIRST := ../test/test_commons/tc_proper_model
 #TEST_ERLC_OPTS := -pa test -pa deps/*/ebin -pa ebin
-DEV_SERVER := erl -pa test -pa deps/*/ebin -pa ebin -smp enable -setcookie CISFORCOOKIE
-RUN_SERVER := erl -pa deps/*/ebin -pa ebin -smp enable -setcookie CISFORCOOKIE
+DEV_SERVER := erl -pa test -pa deps/*/ebin -pa ../uffda/ebin -smp enable -setcookie CISFORCOOKIE
+RUN_SERVER := erl -pa deps/*/ebin -pa ../uffda/ebin -smp enable -setcookie CISFORCOOKIE
 HOST := `hostname` 
 
 
