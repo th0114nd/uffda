@@ -96,7 +96,6 @@ start_link(Service_Name, Service_Pid, Options)
 fsm_name_from_service(Service_Name) ->
     atom_to_list(Service_Name) ++ "_uffda_service_fsm".
 
-
 %%----------------------------------------------------
 %% States of a Service
 %%----------------------------------------------------
@@ -111,8 +110,8 @@ fsm_name_from_service(Service_Name) ->
 ?STATE_REGISTERED({starting, Service_Pid}, #state_data{name=Service_Name} = State_Data) ->
     set_starting_up_with_timeout(reinitialize(Service_Name, Service_Pid, State_Data));
 
-?STATE_REGISTERED(online,   State_Data) -> {next_state, ?STATE_UP,   State_Data};
-?STATE_REGISTERED(offline,  State_Data) -> {next_state, ?STATE_DOWN, State_Data};
+?STATE_REGISTERED(online,   State_Data) -> notify_wrap({next_state, ?STATE_UP,   State_Data});
+?STATE_REGISTERED(offline,  State_Data) -> notify_wrap({next_state, ?STATE_DOWN, State_Data});
 ?STATE_REGISTERED(Event,    State_Data) ->
     log_unexpected_msg(?STATE_REGISTERED, event, Event, State_Data),
     {next_state, ?STATE_REGISTERED, State_Data}.
@@ -140,10 +139,10 @@ starting_transition({starting, Service_Pid}, #state_data{name=Service_Name} = St
 starting_transition({starting, Service_Pid}, #state_data{name=Service_Name} = State_Data, ?STATE_RESTARTING)  ->
     set_restarting_with_timeout  (reinitialize(Service_Name, Service_Pid, State_Data));
 
-starting_transition(timeout,  State_Data, ?STATE_STARTING_UP) -> {next_state, ?STATE_DELAYED_START,   State_Data};
-starting_transition(timeout,  State_Data, ?STATE_RESTARTING)  -> {next_state, ?STATE_DELAYED_RESTART, State_Data};
-starting_transition(online,   State_Data, _Start_Or_Restart)  -> {next_state, ?STATE_UP,              State_Data};
-starting_transition(offline,  State_Data, _Start_Or_Restart)  -> {next_state, ?STATE_DOWN,            State_Data};
+starting_transition(timeout,  State_Data, ?STATE_STARTING_UP) -> notify_wrap({next_state, ?STATE_DELAYED_START,   State_Data});
+starting_transition(timeout,  State_Data, ?STATE_RESTARTING)  -> notify_wrap({next_state, ?STATE_DELAYED_RESTART, State_Data});
+starting_transition(online,   State_Data, _Start_Or_Restart)  -> notify_wrap({next_state, ?STATE_UP,              State_Data});
+starting_transition(offline,  State_Data, _Start_Or_Restart)  -> notify_wrap({next_state, ?STATE_DOWN,            State_Data});
 
 %% Unexpected events also breathe new life into the starting timeout.
 starting_transition(Event,    State_Data, ?STATE_STARTING_UP) ->
@@ -154,10 +153,10 @@ starting_transition(Event,    State_Data, ?STATE_RESTARTING) ->
     set_restarting_with_timeout(State_Data).
 
 set_starting_up_with_timeout(#state_data{max_startup_time = Timeout} = State_Data) ->
-    {next_state, ?STATE_STARTING_UP, State_Data, Timeout}.
+    notify_wrap({next_state, ?STATE_STARTING_UP, State_Data, Timeout}).
 
 set_restarting_with_timeout(#state_data{max_startup_time = Timeout} = State_Data) ->
-    {next_state, ?STATE_RESTARTING, State_Data, Timeout}.
+    notify_wrap({next_state, ?STATE_RESTARTING, State_Data, Timeout}).
 
 %% Service is is taking too long to start up
 -spec ?STATE_DELAYED_START   (service_event(), state_data())
@@ -181,8 +180,8 @@ delayed_transition({starting, Service_Pid}, #state_data{name=Service_Name} = Sta
 delayed_transition({starting, Service_Pid}, #state_data{name=Service_Name} = State_Data, ?STATE_DELAYED_RESTART) ->
     set_restarting_with_timeout(reinitialize(Service_Name, Service_Pid, State_Data));
 
-delayed_transition(online,   State_Data, _Start_Or_Restart)      -> {next_state, ?STATE_UP,   State_Data};
-delayed_transition(offline,  State_Data, _Start_Or_Restart)      -> {next_state, ?STATE_DOWN, State_Data};
+delayed_transition(online,   State_Data, _Start_Or_Restart)      -> notify_wrap({next_state, ?STATE_UP,   State_Data});
+delayed_transition(offline,  State_Data, _Start_Or_Restart)      -> notify_wrap({next_state, ?STATE_DOWN, State_Data});
 delayed_transition(Event,    State_Data,  Start_Or_Restart)      ->
     log_unexpected_msg(Start_Or_Restart, event, Event, State_Data),
     {next_state, Start_Or_Restart, State_Data}.
@@ -212,8 +211,8 @@ delayed_transition(Event,    State_Data,  Start_Or_Restart)      ->
 up_down_transition({starting, Service_Pid}, #state_data{name=Service_Name} = State_Data, _Current_State) ->
     set_restarting_with_timeout(reinitialize(Service_Name, Service_Pid, State_Data));
 
-up_down_transition(online,   State_Data, _Current_State) -> {next_state, ?STATE_UP,   State_Data};
-up_down_transition(offline,  State_Data, _Current_State) -> {next_state, ?STATE_DOWN, State_Data};
+up_down_transition(online,   State_Data, _Current_State) -> notify_wrap({next_state, ?STATE_UP,   State_Data});
+up_down_transition(offline,  State_Data, _Current_State) -> notify_wrap({next_state, ?STATE_DOWN, State_Data});
 up_down_transition(Event,    State_Data,  Current_State) ->
     log_unexpected_msg(Current_State, event, Event, State_Data),
     {next_state, Current_State, State_Data}.
@@ -230,10 +229,10 @@ up_down_transition(Event,    State_Data,  Current_State) ->
 %% @end
 init({Service_Name, undefined, Options}) ->
     Timeout = proplists:get_value(max_startup_millis, Options, ?MAX_STARTUP_TIME),
-    {ok, ?STATE_REGISTERED, #state_data{name=Service_Name, max_startup_time=Timeout}};
+    notify_wrap({ok, ?STATE_REGISTERED, #state_data{name=Service_Name, max_startup_time=Timeout}});
 init({Service_Name, Service_Pid, Options}) ->
     Timeout = proplists:get_value(max_startup_millis, Options, ?MAX_STARTUP_TIME),
-    {ok, ?STATE_REGISTERED, reinitialize(Service_Name, Service_Pid, #state_data{max_startup_time=Timeout})}.
+    notify_wrap({ok, ?STATE_REGISTERED, reinitialize(Service_Name, Service_Pid, #state_data{max_startup_time=Timeout})}).
 
 -spec reinitialize(service_name(), service_pid(), State1::state_data()) -> State2::state_data().
 %% @hidden
@@ -276,13 +275,13 @@ handle_event(Event, State_Name, State_Data) ->
 %% @end
 handle_sync_event({re_init, Service_Pid}, _From, State_Name, #state_data{pid=Service_Pid, max_startup_time = Timeout} = State_Data)
   when State_Name =/= ?STATE_REGISTERED ->
-    {reply, ok, ?STATE_RESTARTING, State_Data, Timeout};
+    notify_wrap({reply, ok, ?STATE_RESTARTING, State_Data, Timeout});
 
 %% Re-init with a new process to monitor...
 handle_sync_event({re_init, Service_Pid}, _From, State_Name, #state_data{name=Name, max_startup_time = Timeout} = State_Data)
   when State_Name =/= ?STATE_REGISTERED ->
     New_State_Data = reinitialize(Name, Service_Pid, State_Data),
-    {reply, ok, ?STATE_RESTARTING, New_State_Data, Timeout};
+    notify_wrap({reply, ok, ?STATE_RESTARTING, New_State_Data, Timeout});
 
 %% Request to get the current status...
 handle_sync_event(current_status, _From, State_Name, State_Data) ->
@@ -312,11 +311,11 @@ handle_sync_event(Event, _From, State_Name, State_Data) ->
 %% @end
 handle_info({'DOWN', Mon_Ref, process, Pid, normal}, _State_Name, 
             #state_data{monitor_ref=Mon_Ref, pid=Pid} = State_Data) ->
-    {next_state, ?STATE_DOWN,    State_Data#state_data{monitor_ref=undefined, pid=undefined}};
+    notify_wrap({next_state, ?STATE_DOWN,    State_Data#state_data{monitor_ref=undefined, pid=undefined}});
 
 handle_info({'DOWN', Mon_Ref, process, Pid, _Reason}, _State_Name, 
             #state_data{monitor_ref=Mon_Ref, pid=Pid} = State_Data) ->
-    {next_state, ?STATE_CRASHED, State_Data#state_data{monitor_ref=undefined, pid=undefined}};
+    notify_wrap({next_state, ?STATE_CRASHED, State_Data#state_data{monitor_ref=undefined, pid=undefined}});
 
 %% Some unknown request.
 handle_info(Info, State_Name, State_Data) ->
@@ -362,3 +361,8 @@ status(?STATE_DELAYED_RESTART) -> slow_restart;
 status(?STATE_CRASHED)         -> crashed;
 status(?STATE_DOWN)            -> down;
 status(?STATE_UP)              -> up.
+
+
+-spec notify_wrap(term()) -> term().
+notify_wrap(A) -> A.
+
