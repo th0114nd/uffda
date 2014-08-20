@@ -75,19 +75,21 @@ service_status(Name) ->
 delete_service(Name) ->
     list_to_binary([atom_to_list(uffda_client:unregister_service(Name))|["\n"]]).
 
--spec add_service(atom()) -> boolean().
-add_service(undefined) ->
+-spec add_service(atom(), binary()) -> boolean().
+add_service(undefined, _) ->
     false;
-add_service(Name) ->
+add_service(Name, undefined) ->
     uffda_client:register_service(Name),
+    service_exists(Name);
+add_service(Name, Timeout) ->
+    uffda_client:register_service(Name, [binary_to_integer(Timeout)]),
     service_exists(Name).
 
 update_service_status(Name, <<"start">>, Body) ->
-    case proplists:get_value(<<"timeout">>, Body) of
-        Timeout when is_number(Timeout) -> uffda_client:starting_service(Name, Timeout);
-        undefined -> uffda_client:starting_service(Name)
-    end,
-    uffda_client:service_status(Name) =:= 'starting_up';
+    Pid = list_to_pid(binary_to_list(proplists:get_value(<<"pid">>, Body))),
+    uffda_client:starting_service(Name, Pid),
+    uffda_client:service_status(Name) =:= 'starting_up' orelse
+    uffda_client:service_status(Name) =:= 'restarting';
 update_service_status(Name, <<"set_online">>, _) ->
     uffda_client:set_service_online(Name),
     uffda_client:service_status(Name) =:= 'up';
@@ -109,7 +111,7 @@ no_body(Req, State) ->
 
 accept_app(Req, State) ->
     {ok, Body, Req2} = cowboy_req:body_qs(Req),
-    Result = validate_body(Body) andalso
+    Result = validate(State#state.method, Body) andalso
              dispatch_on_method_with_body(State#state.name,
                                           State#state.method,
                                           Body),
@@ -136,13 +138,13 @@ dispatch_on_method(undefined, <<"GET">>) ->
 dispatch_on_method(Name, <<"GET">>) ->
     service_status(Name);
 dispatch_on_method(Name, <<"DELETE">>) ->
-    delete_service(Name);
-dispatch_on_method(Name, <<"PUT">>) ->
-    add_service(Name).
+    delete_service(Name).
 
 -spec dispatch_on_method_with_body(atom(), binary(), proplists:proplist()) -> boolean().
 dispatch_on_method_with_body(Name, <<"POST">>, Body) ->
-    update_service_status(Name, proplists:get_value(<<"update">>, Body), Body).
+    update_service_status(Name, proplists:get_value(<<"update">>, Body), Body);
+dispatch_on_method_with_body(Name, <<"PUT">>, Body) ->
+    add_service(Name, proplists:get_value(<<"timeout">>, Body, undefined)).
 
 -spec valid_name_method_conf(atom(), atom()) -> boolean().
 valid_name_method_conf(undefined, <<"GET">>) -> true;
@@ -154,9 +156,14 @@ valid_name_method_conf(Name, <<"POST">>) ->
 valid_name_method_conf(Name, <<"GET">>) ->
     service_exists(Name).
 
--spec validate_body(proplists:proplist()) -> boolean().
-validate_body(Body) ->
-    proplists:is_defined(<<"update">>, Body) andalso
-    (proplists:get_value(<<"update">>, Body) =:= <<"start">> orelse 
-     proplists:get_value(<<"update">>, Body) =:= <<"set_online">> orelse
-     proplists:get_value(<<"update">>, Body) =:= <<"set_offline">>).
+-spec validate(binary(), proplists:proplist()) -> boolean().
+validate(<<"POST">>, Body) ->
+    validate_body(proplists:get_value(<<"update">>, Body, undefined), Body);
+validate(<<"PUT">>, _) -> true.
+
+-spec validate_body(binary(), propists:proplist()) -> boolean(). 
+validate_body(<<"start">>, Body) ->
+    proplists:is_defined(<<"pid">>, Body);
+validate_body(<<"set_online">>, _) -> true;
+validate_body(<<"set_offline">>, _) -> true;
+validate_body(_, _) -> false.
