@@ -1,5 +1,12 @@
 -module(uffda_api_table).
 
--export([dt/0]).
+-export([listen/0]).
 
-dt() -> [{"/", uffda_rest_handler, []}].
+listen() ->
+    Dispatch = cowboy_router:compile([
+        {'_', [
+            {<<"/uffda-services/[:name]">>, uffda_rest_handler, []}
+            ]}
+        ]),
+    {ok, _} = cowboy:start_http(http, 10, [{port, 8000}], [
+        {env, [{dispatch, Dispatch}]}]). 
