@@ -8,12 +8,11 @@ Running uffda requires erlang version R16B03-1.
 
 Testing
 -------
-In order to run it locally, it should be eneough to build the Persistant Lookup Table and
-then run the tests:
+In order to run it locally:
 
     $ git clone https://github.com/pierce-m/uffda
     $ cd uffda
-    $ make build-plt && make tests
+    $ make
 
 To check that the types are properly specified, run 
 
