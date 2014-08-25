@@ -8,6 +8,9 @@
   {included_applications, [public_key, crypto, ssl, asn1,
                            cowlib, cowboy]},
   {mod, {uffda, []}},
+  {start_phases, [
+    {listen, []}
+    ]},
   {modules, []},
   {env, []}
  ]

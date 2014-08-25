@@ -15,7 +15,6 @@ start_link() ->
 init(_Args) ->
     Ranch_Sup = ?SUPER(ranch_sup, []),
     Cowboy_Sup = ?SUPER(cowboy_sup, []),
-    Begin_Listen = {uffda_api_table,  {uffda_api_table, listen, []}, transient, infinity, worker, [uffda_api_table]},
 	Sys_Sup = ?SUPER(sys_sup, []),
-    Apps_N_Children = [Ranch_Sup, Cowboy_Sup, Begin_Listen, Sys_Sup],
-    {ok, {{rest_for_one, 5, 60}, Apps_N_Children}}.
+    Apps = [Ranch_Sup, Cowboy_Sup, Sys_Sup],
+    {ok, {{rest_for_one, 5, 60}, Apps}}.
