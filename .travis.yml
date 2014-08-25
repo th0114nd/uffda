@@ -1,0 +1,4 @@
+language: Erlang
+otp_release:
+    - 17.1
+script: "make tests"
