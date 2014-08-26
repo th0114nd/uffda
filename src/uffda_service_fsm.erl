@@ -21,35 +21,35 @@
          handle_event/3, handle_sync_event/4, handle_info/3]).
 
 %% FSM Service States (only exported for FSM internal calling)
--define(STATE_REGISTERED,      'STATE_REGISTERED').
--define(STATE_STARTING_UP,     'STATE_STARTING_UP').
--define(STATE_RESTARTING,      'STATE_RESTARTING').
--define(STATE_DELAYED_START,   'STATE_DELAYED_START').
--define(STATE_DELAYED_RESTART, 'STATE_DELAYED_RESTART').
--define(STATE_CRASHED,         'STATE_CRASHED').
--define(STATE_DOWN,            'STATE_DOWN').
--define(STATE_UP,              'STATE_UP').
+-define(registered,      'STATE_REGISTERED').
+-define(starting_up,     'STATE_STARTING_UP').
+-define(restarting,      'STATE_RESTARTING').
+-define(delayed_start,   'STATE_DELAYED_START').
+-define(delayed_restart, 'STATE_DELAYED_RESTART').
+-define(crashed,         'STATE_CRASHED').
+-define(down,            'STATE_DOWN').
+-define(up,              'STATE_UP').
 
 -export([
-         ?STATE_REGISTERED/2,
-         ?STATE_STARTING_UP/2,
-         ?STATE_RESTARTING/2,
-         ?STATE_DELAYED_START/2,
-         ?STATE_DELAYED_RESTART/2,
-         ?STATE_CRASHED/2,
-         ?STATE_DOWN/2,
-         ?STATE_UP/2
+         ?registered/2,
+         ?starting_up/2,
+         ?restarting/2,
+         ?delayed_start/2,
+         ?delayed_restart/2,
+         ?crashed/2,
+         ?down/2,
+         ?up/2
         ]).
 
 -type fsm_state_name() ::
-        ?STATE_REGISTERED
-      | ?STATE_STARTING_UP
-      | ?STATE_RESTARTING
-      | ?STATE_DELAYED_START
-      | ?STATE_DELAYED_RESTART
-      | ?STATE_CRASHED
-      | ?STATE_DOWN
-      | ?STATE_UP.
+        ?registered
+      | ?starting_up
+      | ?restarting
+      | ?delayed_start
+      | ?delayed_restart
+      | ?crashed
+      | ?down
+      | ?up.
 
 %% FSM Internal state data
 -record(state_data, {
@@ -101,118 +101,116 @@ fsm_name_from_service(Service_Name) ->
 %%----------------------------------------------------
 
 %% Service is registered for the first time
--spec ?STATE_REGISTERED(service_event(), state_data())
+-spec ?registered(service_event(), state_data())
                        -> {next_state, fsm_state_name(), state_data()}.
 %% @hidden
 %% @doc
 %%   Initial registered state, only visited once.
 %% @end
-?STATE_REGISTERED({starting, Service_Pid}, #state_data{name=Service_Name} = State_Data) ->
+?registered({starting, Service_Pid}, #state_data{name=Service_Name} = State_Data) ->
     set_starting_up_with_timeout(reinitialize(Service_Name, Service_Pid, State_Data));
-
-?STATE_REGISTERED(online,   State_Data) -> notify_wrap({next_state, ?STATE_UP,   State_Data});
-?STATE_REGISTERED(offline,  State_Data) -> notify_wrap({next_state, ?STATE_DOWN, State_Data});
-?STATE_REGISTERED(Event,    State_Data) ->
-    log_unexpected_msg(?STATE_REGISTERED, event, Event, State_Data),
-    {next_state, ?STATE_REGISTERED, State_Data}.
+?registered(online,   State_Data) -> notify_wrap({next_state, ?up,   State_Data});
+?registered(offline,  State_Data) -> notify_wrap({next_state, ?down, State_Data});
+?registered(Event,    State_Data) ->
+    log_unexpected_msg(?registered, event, Event, State_Data),
+    {next_state, ?registered, State_Data}.
 
 %% Service is starting up
--spec ?STATE_STARTING_UP (service_event(), state_data())
+-spec ?starting_up(service_event(), state_data())
                          -> {next_state, fsm_state_name(), state_data()}.
 %% @hidden
 %% @doc
 %%   Starting up state, only visited once. Timeout moves to 'DELAYED_STARTUP'.
 %% @end
-?STATE_STARTING_UP (Event, State_Data) -> starting_transition(Event, State_Data, ?STATE_STARTING_UP).
+?starting_up(Event, State_Data) -> starting_transition(Event, State_Data, ?starting_up).
 
--spec ?STATE_RESTARTING  (service_event(), state_data())
+-spec ?restarting(service_event(), state_data())
                          -> {next_state, fsm_state_name(), state_data()}.
 %% @hidden
 %% @doc
 %%   Restarting state. Timeout moves to 'DELAYED_RESTART'.
 %% @end
-?STATE_RESTARTING  (Event, State_Data) -> starting_transition(Event, State_Data, ?STATE_RESTARTING).
+?restarting(Event, State_Data) -> starting_transition(Event, State_Data, ?restarting).
 
 %% Multiple starting events is like a ping that provides more time to startup.
-starting_transition({starting, Service_Pid}, #state_data{name=Service_Name} = State_Data, ?STATE_STARTING_UP) ->
+starting_transition({starting, Service_Pid}, #state_data{name=Service_Name} = State_Data, ?starting_up) ->
     set_starting_up_with_timeout (reinitialize(Service_Name, Service_Pid, State_Data));
-starting_transition({starting, Service_Pid}, #state_data{name=Service_Name} = State_Data, ?STATE_RESTARTING)  ->
+starting_transition({starting, Service_Pid}, #state_data{name=Service_Name} = State_Data, ?restarting)  ->
     set_restarting_with_timeout  (reinitialize(Service_Name, Service_Pid, State_Data));
-
-starting_transition(timeout,  State_Data, ?STATE_STARTING_UP) -> notify_wrap({next_state, ?STATE_DELAYED_START,   State_Data});
-starting_transition(timeout,  State_Data, ?STATE_RESTARTING)  -> notify_wrap({next_state, ?STATE_DELAYED_RESTART, State_Data});
-starting_transition(online,   State_Data, _Start_Or_Restart)  -> notify_wrap({next_state, ?STATE_UP,              State_Data});
-starting_transition(offline,  State_Data, _Start_Or_Restart)  -> notify_wrap({next_state, ?STATE_DOWN,            State_Data});
+starting_transition(timeout,  State_Data, ?starting_up)  -> notify_wrap({next_state, ?delayed_start,   State_Data});
+starting_transition(timeout,  State_Data, ?restarting)   -> notify_wrap({next_state, ?delayed_restart, State_Data});
+starting_transition(online,   State_Data, _Start_Restart)-> notify_wrap({next_state, ?up,              State_Data});
+starting_transition(offline,  State_Data, _Start_Restart)-> notify_wrap({next_state, ?down,            State_Data});
 
 %% Unexpected events also breathe new life into the starting timeout.
-starting_transition(Event,    State_Data, ?STATE_STARTING_UP) ->
-    log_unexpected_msg(?STATE_STARTING_UP, event, Event, State_Data),
+starting_transition(Event,    State_Data, ?starting_up) ->
+    log_unexpected_msg(?starting_up, event, Event, State_Data),
     set_starting_up_with_timeout(State_Data);
-starting_transition(Event,    State_Data, ?STATE_RESTARTING) ->
-    log_unexpected_msg(?STATE_RESTARTING,  event, Event, State_Data),
+starting_transition(Event,    State_Data, ?restarting) ->
+    log_unexpected_msg(?restarting,  event, Event, State_Data),
     set_restarting_with_timeout(State_Data).
 
 set_starting_up_with_timeout(#state_data{max_startup_time = Timeout} = State_Data) ->
-    notify_wrap({next_state, ?STATE_STARTING_UP, State_Data, Timeout}).
+    notify_wrap({next_state, ?starting_up, State_Data, Timeout}).
 
 set_restarting_with_timeout(#state_data{max_startup_time = Timeout} = State_Data) ->
-    notify_wrap({next_state, ?STATE_RESTARTING, State_Data, Timeout}).
+    notify_wrap({next_state, ?restarting, State_Data, Timeout}).
 
 %% Service is is taking too long to start up
--spec ?STATE_DELAYED_START   (service_event(), state_data())
+-spec ?delayed_start   (service_event(), state_data())
                              -> {next_state, fsm_state_name(), state_data()}.
 %% @hidden
 %% @doc
 %%   Starting up phase lasted too long.
 %% @end
-?STATE_DELAYED_START   (Event, State_Data) -> delayed_transition(Event, State_Data, ?STATE_DELAYED_START).
+?delayed_start(Event, State_Data) -> delayed_transition(Event, State_Data, ?delayed_start).
 
--spec ?STATE_DELAYED_RESTART (service_event(), state_data())
+-spec ?delayed_restart(service_event(), state_data())
                              -> {next_state, fsm_state_name(), state_data()}.
 %% @hidden
 %% @doc
 %%   Restart phase lasted too long.
 %% @end
-?STATE_DELAYED_RESTART (Event, State_Data) -> delayed_transition(Event, State_Data, ?STATE_DELAYED_RESTART).
+?delayed_restart (Event, State_Data) -> delayed_transition(Event, State_Data, ?delayed_restart).
 
-delayed_transition({starting, Service_Pid}, #state_data{name=Service_Name} = State_Data, ?STATE_DELAYED_START) ->
+delayed_transition({starting, Service_Pid}, #state_data{name=Service_Name} = State_Data, ?delayed_start) ->
     set_starting_up_with_timeout(reinitialize(Service_Name, Service_Pid, State_Data));
-delayed_transition({starting, Service_Pid}, #state_data{name=Service_Name} = State_Data, ?STATE_DELAYED_RESTART) ->
+delayed_transition({starting, Service_Pid}, #state_data{name=Service_Name} = State_Data, ?delayed_restart) ->
     set_restarting_with_timeout(reinitialize(Service_Name, Service_Pid, State_Data));
 
-delayed_transition(online,   State_Data, _Start_Or_Restart)      -> notify_wrap({next_state, ?STATE_UP,   State_Data});
-delayed_transition(offline,  State_Data, _Start_Or_Restart)      -> notify_wrap({next_state, ?STATE_DOWN, State_Data});
+delayed_transition(online,   State_Data, _Start_Or_Restart)      -> notify_wrap({next_state, ?up,   State_Data});
+delayed_transition(offline,  State_Data, _Start_Or_Restart)      -> notify_wrap({next_state, ?down, State_Data});
 delayed_transition(Event,    State_Data,  Start_Or_Restart)      ->
     log_unexpected_msg(Start_Or_Restart, event, Event, State_Data),
     {next_state, Start_Or_Restart, State_Data}.
 
 %% Service can toggle between restarting/up/down/crashed.
--spec ?STATE_UP      (term(), state_data()) -> {next_state, fsm_state_name(), state_data()}.
+-spec ?up(term(), state_data()) -> {next_state, fsm_state_name(), state_data()}.
 %% @hidden
 %% @doc
 %%   Service is now available.
 %% @end
-?STATE_UP      (Event, State_Data) -> up_down_transition(Event, State_Data, ?STATE_UP).
+?up(Event, State_Data) -> up_down_transition(Event, State_Data, ?up).
 
--spec ?STATE_DOWN    (term(), state_data()) -> {next_state, fsm_state_name(), state_data()}.
+-spec ?down(term(), state_data()) -> {next_state, fsm_state_name(), state_data()}.
 %% @hidden
 %% @doc
 %%   Service is no longer available.
 %% @end
-?STATE_DOWN    (Event, State_Data) -> up_down_transition(Event, State_Data, ?STATE_DOWN).
+?down(Event, State_Data) -> up_down_transition(Event, State_Data, ?down).
 
--spec ?STATE_CRASHED (term(), state_data()) -> {next_state, fsm_state_name(), state_data()}.
+-spec ?crashed(term(), state_data()) -> {next_state, fsm_state_name(), state_data()}.
 %% @hidden
 %% @doc
 %%   Service crashed unexpectedly.
 %% @end
-?STATE_CRASHED (Event, State_Data) -> up_down_transition(Event, State_Data, ?STATE_CRASHED).
+?crashed(Event, State_Data) -> up_down_transition(Event, State_Data, ?crashed).
 
 up_down_transition({starting, Service_Pid}, #state_data{name=Service_Name} = State_Data, _Current_State) ->
     set_restarting_with_timeout(reinitialize(Service_Name, Service_Pid, State_Data));
 
-up_down_transition(online,   State_Data, _Current_State) -> notify_wrap({next_state, ?STATE_UP,   State_Data});
-up_down_transition(offline,  State_Data, _Current_State) -> notify_wrap({next_state, ?STATE_DOWN, State_Data});
+up_down_transition(online,   State_Data, _Current_State) -> notify_wrap({next_state, ?up,   State_Data});
+up_down_transition(offline,  State_Data, _Current_State) -> notify_wrap({next_state, ?down, State_Data});
 up_down_transition(Event,    State_Data,  Current_State) ->
     log_unexpected_msg(Current_State, event, Event, State_Data),
     {next_state, Current_State, State_Data}.
@@ -229,10 +227,10 @@ up_down_transition(Event,    State_Data,  Current_State) ->
 %% @end
 init({Service_Name, undefined, Options}) ->
     Timeout = proplists:get_value(max_startup_millis, Options, ?MAX_STARTUP_TIME),
-    notify_wrap({ok, ?STATE_REGISTERED, #state_data{name=Service_Name, max_startup_time=Timeout}});
+    notify_wrap({ok, ?registered, #state_data{name=Service_Name, max_startup_time=Timeout}});
 init({Service_Name, Service_Pid, Options}) ->
     Timeout = proplists:get_value(max_startup_millis, Options, ?MAX_STARTUP_TIME),
-    notify_wrap({ok, ?STATE_REGISTERED, reinitialize(Service_Name, Service_Pid, #state_data{max_startup_time=Timeout})}).
+    notify_wrap({ok, ?registered, reinitialize(Service_Name, Service_Pid, #state_data{max_startup_time=Timeout})}).
 
 -spec reinitialize(service_name(), service_pid(), State1::state_data()) -> State2::state_data().
 %% @hidden
@@ -274,14 +272,14 @@ handle_event(Event, State_Name, State_Data) ->
 %%   </ul>
 %% @end
 handle_sync_event({re_init, Service_Pid}, _From, State_Name, #state_data{pid=Service_Pid, max_startup_time = Timeout} = State_Data)
-  when State_Name =/= ?STATE_REGISTERED ->
-    notify_wrap({reply, ok, ?STATE_RESTARTING, State_Data, Timeout});
+  when State_Name =/= ?registered ->
+    notify_wrap({reply, ok, ?restarting, State_Data, Timeout});
 
 %% Re-init with a new process to monitor...
 handle_sync_event({re_init, Service_Pid}, _From, State_Name, #state_data{name=Name, max_startup_time = Timeout} = State_Data)
-  when State_Name =/= ?STATE_REGISTERED ->
+  when State_Name =/= ?registered ->
     New_State_Data = reinitialize(Name, Service_Pid, State_Data),
-    notify_wrap({reply, ok, ?STATE_RESTARTING, New_State_Data, Timeout});
+    notify_wrap({reply, ok, ?restarting, New_State_Data, Timeout});
 
 %% Request to get the current status...
 handle_sync_event(current_status, _From, State_Name, State_Data) ->
@@ -298,7 +296,7 @@ handle_sync_event(Event, _From, State_Name, State_Data) ->
 
 -type info_msg() :: {'DOWN', reference(), process, service_pid(), Reason::any()}.
 -spec handle_info(info_msg(), fsm_state_name(), term())
-                 -> {next_state, ?STATE_DOWN, state_data()}.
+                 -> {next_state, ?down, state_data()}.
 
 %% @hidden
 %% @doc
@@ -311,11 +309,11 @@ handle_sync_event(Event, _From, State_Name, State_Data) ->
 %% @end
 handle_info({'DOWN', Mon_Ref, process, Pid, normal}, _State_Name, 
             #state_data{monitor_ref=Mon_Ref, pid=Pid} = State_Data) ->
-    notify_wrap({next_state, ?STATE_DOWN,    State_Data#state_data{monitor_ref=undefined, pid=undefined}});
+    notify_wrap({next_state, ?down,    State_Data#state_data{monitor_ref=undefined, pid=undefined}});
 
 handle_info({'DOWN', Mon_Ref, process, Pid, _Reason}, _State_Name, 
             #state_data{monitor_ref=Mon_Ref, pid=Pid} = State_Data) ->
-    notify_wrap({next_state, ?STATE_CRASHED, State_Data#state_data{monitor_ref=undefined, pid=undefined}});
+    notify_wrap({next_state, ?crashed, State_Data#state_data{monitor_ref=undefined, pid=undefined}});
 
 %% Some unknown request.
 handle_info(Info, State_Name, State_Data) ->
@@ -353,14 +351,14 @@ log_unexpected_msg(Call, Type, Type_Value, State_Data) ->
 %% @doc
 %%   Translate internal State function names to external atoms.
 %% @end
-status(?STATE_REGISTERED)      -> registered;
-status(?STATE_STARTING_UP)     -> starting_up;
-status(?STATE_RESTARTING)      -> restarting;
-status(?STATE_DELAYED_START)   -> slow_start;
-status(?STATE_DELAYED_RESTART) -> slow_restart;
-status(?STATE_CRASHED)         -> crashed;
-status(?STATE_DOWN)            -> down;
-status(?STATE_UP)              -> up.
+status(?registered)      -> registered;
+status(?starting_up)     -> starting_up;
+status(?restarting)      -> restarting;
+status(?delayed_start)   -> slow_start;
+status(?delayed_restart) -> slow_restart;
+status(?crashed)         -> crashed;
+status(?down)            -> down;
+status(?up)              -> up.
 
 
 -spec notify_wrap(term()) -> term().
