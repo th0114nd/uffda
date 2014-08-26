@@ -3,4 +3,5 @@ otp_release:
     - 17.1
     - R16B03-1
 
-script: "make tests"
+before_script: "make plt"
+script: "make tests && make dialyze"

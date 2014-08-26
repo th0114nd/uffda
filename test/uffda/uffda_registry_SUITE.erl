@@ -39,6 +39,7 @@
 %%         prop_register_unregister/0
         ]).
 
+-export([atom_list/1]).
 
 -include("uffda_common_test.hrl").
 -type test_group() :: atom().
