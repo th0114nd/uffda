@@ -2,15 +2,21 @@ PROJECT = uffda
 
 DEPS = cowboy eper
 
+V = 0
+
 TEST_DEPS = proper test_commons
 dep_proper = git https://github.com/th0114nd/proper master
 dep_test_commons = git https://github.com/th0114nd/test_commons master
 
+
+ERLC_OPTS := +debug_info +"{cover_enabled, true}"
+
 # Needed for testing
+TEST_ERLC_OPTS := -I include $(ERLC_OPTS)
 CT_OPTS := -cover test/uffda.coverspec
 CT_SUITES := uffda_registry uffda_service uffda_system
 
-DIALYZER_OPTS := test/uffda -Werror_handling -Wrace_conditions -Wunmatched_returns
+DIALYZER_OPTS := -I include test/uffda -Werror_handling -Wrace_conditions -Wunmatched_returns
 
 EDOC_DIRS := ["src", "examples", "test/uffda", "test/test_commons"]
 EDOC_OPTS := {preprocess, true}, {source_path, ${EDOC_DIRS}}, nopackages, {subpackages, true}
@@ -23,7 +29,7 @@ include erlang.mk
 run: all
 	$(SERVER) -s uffda
 
-dev: build
+dev: all
 	$(SERVER) -pa test
 
 images: doc
@@ -37,4 +43,6 @@ release: clean-release all
 	relx -o rel/$(PROJECT)
 
 clean::
-	rm -rf rel/$(PROJECT)
+	rm -rf rel
+	rm -rf _rel
+	rm -rf logs
