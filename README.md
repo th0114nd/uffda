@@ -6,13 +6,13 @@ From Wikipedia, "Uff da is often used in the Pacific Northwest and Upper Midwest
 
 Testing
 -------
-In order to run it locally, it should be eneough to build the Persistant Lookup Table and
-then run the tests:
+In order to run tests, clone and hit make:
 
     $ git clone https://github.com/tigertext/uffda
     $ cd uffda
-    $ make build-plt && make tests
+    $ make tests
 
-To check that the types are properly specified, run 
+To check that the types are properly specified, make the plt and run dialyzer:
 
+    $ make plt
     $ make dialyze
