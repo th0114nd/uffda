@@ -14,12 +14,6 @@
          content_types_provided/2,
          terminate/3]).
 
-%% Calls to uffda
--export([which_services/0,
-         service_status/1,
-         delete_service/1
-        ]).
-
 -record(state,
         {name :: atom(),
         method :: binary()}).
@@ -36,10 +30,15 @@ rest_init(Req, []) ->
     {ok, Req2, #state{name = get_name(Req), method = Method}}.
 
 allowed_methods(Req, State) ->
-    {[<<"GET">>, <<"DELETE">>, <<"PUT">>, <<"POST">>], Req, State}.
+    Allowed_Methods = 
+        case State#state.name of
+            undefined -> [<<"GET">>];
+            _ -> [<<"GET">>, <<"DELETE">>, <<"PUT">>, <<"POST">>]
+        end,
+    {Allowed_Methods, Req, State}.
 
 resource_exists(Req, State) ->
-    {valid_name_method_conf(State#state.name, State#state.method), Req, State}. 
+    {valid_name_method_conf(State), Req, State}. 
 
 content_types_accepted(Req, State) ->
     {[
@@ -53,7 +52,7 @@ content_types_provided(Req, State) ->
     ], Req, State}.
 
 delete_resource(Req, State) ->
-    dispatch_on_method(State#state.name, State#state.method),
+    dispatch_on_method(State),
     {not service_exists(State#state.name), Req, State}.
 
 terminate(_Reason, _Req, _State) ->
@@ -76,8 +75,6 @@ delete_service(Name) ->
     list_to_binary([atom_to_list(uffda_client:unregister_service(Name))|["\n"]]).
 
 -spec add_service(atom(), binary()) -> boolean().
-add_service(undefined, _) ->
-    false;
 add_service(Name, undefined) ->
     uffda_client:register_service(Name),
     service_exists(Name);
@@ -106,19 +103,17 @@ service_exists(Name) ->
 %%------------------------------------------------------------------------------------
 
 no_body(Req, State) ->
-    Response = dispatch_on_method(State#state.name, State#state.method),
+    Response = dispatch_on_method(State),
     {Response, Req, State}.
 
 accept_app(Req, State) ->
     {ok, Body, Req2} = cowboy_req:body_qs(Req),
     Result = validate(State#state.method, Body) andalso
-             dispatch_on_method_with_body(State#state.name,
-                                          State#state.method,
-                                          Body),
+             dispatch_on_method_with_body(State, Body),
     {Result, Req2, State}.
 
 output_plain_text(Req, State) ->
-    Response = dispatch_on_method(State#state.name, State#state.method),
+    Response = dispatch_on_method(State),
     {Response, Req, State}.
 
 %%------------------------------------------------------------------------------------
@@ -132,29 +127,34 @@ get_name(Req) ->
         _ -> binary_to_atom(Service_Bin, latin1)
     end.
 
--spec dispatch_on_method(atom(), atom()) -> binary() | boolean(). 
-dispatch_on_method(undefined, <<"GET">>) ->
+-spec dispatch_on_method(#state{}) -> binary() | boolean(). 
+dispatch_on_method(#state{name = undefined, method = <<"GET">>}) ->
     which_services();
-dispatch_on_method(Name, <<"GET">>) ->
+dispatch_on_method(#state{name = Name, method = <<"GET">>}) ->
     service_status(Name);
-dispatch_on_method(Name, <<"DELETE">>) ->
-    delete_service(Name).
+dispatch_on_method(#state{name = Name, method = <<"DELETE">>}) ->
+    delete_service(Name);
+dispatch_on_method(#state{name = Name, method = <<"PUT">>}) ->
+    add_service(Name, undefined);
+dispatch_on_method(#state{method = <<"POST">>}) -> false.
 
--spec dispatch_on_method_with_body(atom(), binary(), proplists:proplist()) -> boolean().
-dispatch_on_method_with_body(Name, <<"POST">>, Body) ->
+-spec dispatch_on_method_with_body(#state{}, proplists:proplist()) -> boolean().
+dispatch_on_method_with_body(#state{name = Name, method = <<"POST">>}, Body) ->
     update_service_status(Name, proplists:get_value(<<"update">>, Body), Body);
-dispatch_on_method_with_body(Name, <<"PUT">>, Body) ->
+dispatch_on_method_with_body(#state{name = Name, method = <<"PUT">>}, Body) ->
     add_service(Name, proplists:get_value(<<"timeout">>, Body, undefined)).
 
--spec valid_name_method_conf(atom(), atom()) -> boolean().
-valid_name_method_conf(undefined, <<"GET">>) -> true;
-valid_name_method_conf(_, <<"PUT">>) -> true;
-valid_name_method_conf(Name, <<"DELETE">>) ->
+-spec valid_name_method_conf(#state{}) -> boolean().
+valid_name_method_conf(#state{name = Name, method = <<"DELETE">>}) ->
     service_exists(Name);
-valid_name_method_conf(Name, <<"POST">>) ->
+valid_name_method_conf(#state{name = Name, method = <<"POST">>}) ->
     service_exists(Name);
-valid_name_method_conf(Name, <<"GET">>) ->
-    service_exists(Name).
+valid_name_method_conf(#state{name = undefined, method = <<"GET">>}) ->
+    true;
+valid_name_method_conf(#state{name = Name, method = <<"GET">>}) ->
+    service_exists(Name);
+valid_name_method_conf(#state{method = <<"PUT">>}) ->
+    true.
 
 -spec validate(binary(), proplists:proplist()) -> boolean().
 validate(<<"POST">>, Body) ->
