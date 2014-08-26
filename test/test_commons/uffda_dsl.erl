@@ -3,6 +3,7 @@
 -export([clean_up/1]).
 -export([create_child_spec/1]).
 -export_type([program/0, sup_tree_spec/0, action/0]).
+
 -include("uffda.hrl").
 
 -type program() :: {{startup, sup_tree_spec()}, {actions, [action()]}}.
