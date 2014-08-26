@@ -361,8 +361,9 @@ status(?down)            -> down;
 status(?up)              -> up.
 
 
+-define(notify(), uffda_subscription:notify(Serv, status(State)), A).
 -spec notify_wrap(term()) -> term().
-notify_wrap({next_state, _, _} = A) -> A;
-notify_wrap({next_state, _, _, _} = A) -> A;
-notify_wrap({ok, _, _} = A) -> A.
-
+notify_wrap({next_state, State, #state_data{name = Serv}} = A) -> ?notify();
+notify_wrap({next_state, State, #state_data{name = Serv}, _} = A) -> ?notify();
+notify_wrap({reply, ok, State, #state_data{name = Serv}, _Timeout} = A) -> ?notify();
+notify_wrap({ok, State, #state_data{name = Serv}} = A) -> ?notify().
