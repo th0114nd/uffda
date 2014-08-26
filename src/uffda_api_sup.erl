@@ -15,6 +15,5 @@ start_link() ->
 init(_Args) ->
     Ranch_Sup = ?SUPER(ranch_sup, []),
     Cowboy_Sup = ?SUPER(cowboy_sup, []),
-	Sys_Sup = ?SUPER(sys_sup, []),
-    Apps = [Ranch_Sup, Cowboy_Sup, Sys_Sup],
+    Apps = [Ranch_Sup, Cowboy_Sup],
     {ok, {{rest_for_one, 5, 60}, Apps}}.
