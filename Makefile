@@ -3,6 +3,7 @@ PROJECT = uffda
 DEPS = cowboy eper
 
 TEST_DEPS = proper test_commons
+dep_proper = git https://github.com/th0114nd/proper master
 dep_test_commons = git https://github.com/th0114nd/test_commons master
 
 # Needed for testing
@@ -10,26 +11,20 @@ CT_OPTS := -cover test/uffda.coverspec
 CT_SUITES := uffda_registry uffda_service uffda_system
 
 DIALYZER_OPTS := test/uffda -Werror_handling -Wrace_conditions -Wunmatched_returns
+
 EDOC_DIRS := ["src", "examples", "test/uffda", "test/test_commons"]
 EDOC_OPTS := {preprocess, true}, {source_path, ${EDOC_DIRS}}, nopackages, {subpackages, true}
 
-DEV_SERVER := erl -pa test -pa deps/*/ebin -pa ../uffda/ebin -smp enable -setcookie CISFORCOOKIE
-RUN_SERVER := erl -pa deps/*/ebin -pa ../uffda/ebin -smp enable -setcookie CISFORCOOKIE
-HOST := `hostname` 
+ERL_PATH := -pa ../uffda/ebin deps/*/ebin 
+SERVER := erl -smp enable -boot start_sasl $(ERL_PATH)
 
 include erlang.mk
-run: all patch
-	if [ -n "${NODE}" ]; then ${RUN_SERVER} -boot start_sasl -s uffda; \
-	else ${RUN_SERVER} -boot start_sasl -s uffda; \
-	fi
 
-dev: all #build-ct-suites patch
-	if [ -n "${NODE}" ]; then ${DEV_SERVER} -boot start_sasl; \
-	else ${DEV_SERVER} -boot start_sasl; \
-	fi
+run: all
+	$(SERVER) -s uffda
 
-relxrun: release
-	rel/uffda/uffda/bin/uffda console
+dev: build
+	$(SERVER) -pa test
 
 images: doc
 	mkdir -p doc/images
@@ -40,15 +35,6 @@ images: doc
 
 release: clean-release all
 	relx -o rel/$(PROJECT)
-
-#.IGNORE: patch
-#patch: deps
-#	patch -d deps/proper -N -p1 < 0001-Also-accept-native-types-in-LETs.patch
-#   
-#unpatch: deps
-#	patch -d deps/proper -R -p1 < 0001-Also-accept-native-types-in-LETs.patch
-
-test: tests
 
 clean::
 	rm -rf rel/$(PROJECT)
