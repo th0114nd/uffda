@@ -177,8 +177,12 @@ crash(_Config) ->
     Foo ! {state, self()},
     ok = expect_msg(starting_up),
     starting_up = uffda_client:service_status(foo),
+    Ref = monitor(process, Foo),
     Foo ! die,
-    erlang:yield(),
+    ok = receive
+        {'DOWN', Ref, process, _, _} -> ok;
+        _ -> unexpected
+        end,
     false = is_process_alive(Foo),
     crashed = uffda_client:service_status(foo),
     Bar = create_service(bar),

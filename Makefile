@@ -6,7 +6,7 @@ V = 0
 
 TEST_DEPS = proper test_commons
 dep_proper = git https://github.com/th0114nd/proper master
-dep_test_commons = git https://github.com/th0114nd/test_commons master
+dep_test_commons = git https://github.com/tigertext/test_commons master
 
 
 ERLC_OPTS := +debug_info +"{cover_enabled, true}"
@@ -22,7 +22,7 @@ EDOC_DIRS := ["src", "examples", "test/uffda", "test/test_commons"]
 EDOC_OPTS := {preprocess, true}, {source_path, ${EDOC_DIRS}}, nopackages, {subpackages, true}
 
 ERL_PATH := -pa ../uffda/ebin deps/*/ebin 
-SERVER := erl -smp enable -boot start_sasl $(ERL_PATH)
+SERVER := erl -smp enable $(ERL_PATH)
 
 include erlang.mk
 

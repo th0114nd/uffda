@@ -15,11 +15,12 @@ start_link() ->
 -spec find_vars(sub_type(), address(), service_name()) -> {state(), {atom(), term()}}.
 find_vars(Sub_Type, Return_Address, Service)
   when is_atom(Sub_Type), is_atom(Service) ->
-    Id = State = {Return_Address, Service},
-    CB_Module = case Sub_Type of
-        pid -> uffda_pid_publisher;
-        sse -> uffda_sse_publisher
+    {Updated_Return, CB_Module} = case Sub_Type of
+        pid -> {Return_Address, uffda_pid_publisher};
+        sse -> {self(), uffda_pid_publisher};
+        email -> {Return_Address, uffda_email_publisher}
         end,
+    Id = State = {Updated_Return, Service},
     {State, {CB_Module, Id}}.
 
 -spec subscribe(sub_type(), address(), service_name()) -> ok.

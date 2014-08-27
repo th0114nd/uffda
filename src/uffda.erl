@@ -53,7 +53,21 @@ start(_StartType, _StartArgs) ->
 start_phase(listen, _, _) ->
     Dispatch = cowboy_router:compile([
         {'_', [
-            {<<"/uffda-services/[:name]">>, uffda_rest_handler, []}
+            {<<"/services/[:name]">>, uffda_rest_handler, []},
+            {<<"/subscribe/:name">>, 
+                [{name, function,
+                    fun(Bin) -> try binary_to_existing_atom(Bin, utf8) of
+                                    Name when is_atom(Name) ->
+                                        case uffda_client:service_status(Name) of
+                                            Status when is_atom(Status) -> {true, {Name, Status}};
+                                            {error, _} -> false
+                                        end
+                                catch
+                                    _:_-> false
+                                end end}],
+            
+                uffda_eventsource_handler,
+                []}
             ]}
         ]),
     {ok, _} = cowboy:start_http(http, 10, [{port, 8000}], [
