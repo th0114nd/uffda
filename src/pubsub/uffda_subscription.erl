@@ -13,7 +13,8 @@ start_link() ->
     gen_event:start_link({local, ?PUBLISH_MGR}).
 
 -spec find_vars(sub_type(), address(), service_name()) -> {state(), {atom(), term()}}.
-find_vars(Sub_Type, Return_Address, Service) ->
+find_vars(Sub_Type, Return_Address, Service)
+  when is_atom(Sub_Type), is_atom(Service) ->
     Id = State = {Return_Address, Service},
     CB_Module = case Sub_Type of
         pid -> uffda_pid_publisher;
@@ -22,15 +23,18 @@ find_vars(Sub_Type, Return_Address, Service) ->
     {State, {CB_Module, Id}}.
 
 -spec subscribe(sub_type(), address(), service_name()) -> ok.
-subscribe(Sub_Type, Return_Address, Service) ->
+subscribe(Sub_Type, Return_Address, Service)
+  when is_atom(Sub_Type), is_atom(Service)->
     {State, Handler} = find_vars(Sub_Type, Return_Address, Service),
     gen_event:add_handler(?PUBLISH_MGR, Handler, State).
 
 -spec unsubscribe(sub_type(), address(), service_name()) -> term().
-unsubscribe(Sub_Type, Return_Address, Service) ->
+unsubscribe(Sub_Type, Return_Address, Service)
+  when is_atom(Sub_Type), is_atom(Service) ->
     {_State, Handler} = find_vars(Sub_Type, Return_Address, Service),
     gen_event:delete_handler(?PUBLISH_MGR, Handler, {}).
 
 -spec notify(service_name(), service_status()) -> ok.
-notify(Service, Status) ->
+notify(Service, Status)
+  when is_atom(Service), is_atom(Status) ->
     gen_event:notify(?PUBLISH_MGR, {publish, Service, Status}).
