@@ -1,4 +1,4 @@
-uffda [![Build Status](https://travis-ci.org/th0114nd/uffda.svg)](https://travis-ci.org/th0114nd/uffda)
+uffda [![Build Status](https://travis-ci.org/tigertext/uffda.svg)](https://travis-ci.org/tigertext/uffda)
 =======================================================================================================
 
 An Erlang Service Registry used to track the availability and status of services conforming to its interface. 
