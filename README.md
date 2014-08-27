@@ -16,3 +16,7 @@ To check that the types are properly specified, make the plt and run dialyzer:
 
     $ make plt
     $ make dialyze
+
+Travis CI
+-----------
+Builds are also enabled through travis-ci.org
