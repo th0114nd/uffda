@@ -22,7 +22,7 @@ EDOC_DIRS := ["src", "examples", "test/uffda", "test/test_commons"]
 EDOC_OPTS := {preprocess, true}, {source_path, ${EDOC_DIRS}}, nopackages, {subpackages, true}
 
 ERL_PATH := -pa ../uffda/ebin deps/*/ebin 
-SERVER := erl -smp enable -boot start_sasl $(ERL_PATH)
+SERVER := erl -smp enable $(ERL_PATH)
 
 include erlang.mk
 
