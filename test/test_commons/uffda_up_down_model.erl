@@ -63,15 +63,6 @@ deduce_expected(#scenev_scenario{scenario_desc = Scenario} = _TCPS) ->
 %% A LIVE TRANSITION SEQUENCE
 %%---------------------------------------------------------------------
 
-
--spec translate_dsl(scenev_dsl_desc()) -> 
-    scenev_live_desc().
-translate_dsl(_DSL_Desc) -> ok.
-
--spec translate_events(scenev_dsl_events()) ->
-    scenev_live_events().
-translate_events(_DSL_Events) -> ok.
-
 %% Generates an observation by running events on live program.
 -spec generate_observation(scenev_scenario()) -> term().
 generate_observation(#scenev_scenario{} = _Scenario) ->
