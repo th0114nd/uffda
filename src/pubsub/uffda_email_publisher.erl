@@ -15,7 +15,7 @@ init(State) ->
 handle_event({publish, Service, Status}, State = {Return_Address, Service}) ->
     Service_List = atom_to_list(Service),
     Status_List = atom_to_list(Status),
-    os:cmd("echo " ++ Service_List ++ " " ++ Status_List ++ " | mail -s 'uffda update' " ++ Return_Address),
+    "" = os:cmd("echo " ++ Service_List ++ " " ++ Status_List ++ " | mail -s 'uffda update' " ++ Return_Address),
     {ok, State};
 handle_event(_, State) ->
     {ok, State}.

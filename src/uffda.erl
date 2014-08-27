@@ -61,8 +61,7 @@ start_phase(listen, _, _) ->
                                         case uffda_client:service_status(Name) of
                                             Status when is_atom(Status) -> {true, {Name, Status}};
                                             {error, _} -> false
-                                        end;
-                                    _ -> false
+                                        end
                                 catch
                                     _:_-> false
                                 end end}],
