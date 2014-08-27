@@ -56,8 +56,7 @@ start_phase(listen, _, _) ->
             {<<"/services/[:name]">>, uffda_rest_handler, []},
             {<<"/subscribe/:name">>, 
                 [{name, function,
-                    fun(Bin) -> error_logger:error_msg("Bin: ~p", [Bin]), 
-                                try binary_to_existing_atom(Bin, utf8) of
+                    fun(Bin) -> try binary_to_existing_atom(Bin, utf8) of
                                     Name when is_atom(Name) ->
                                         case uffda_client:service_status(Name) of
                                             Status when is_atom(Status) -> {true, {Name, Status}};

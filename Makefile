@@ -6,7 +6,7 @@ V = 0
 
 TEST_DEPS = proper test_commons
 dep_proper = git https://github.com/th0114nd/proper master
-dep_test_commons = git https://github.com/th0114nd/test_commons master
+dep_test_commons = git https://github.com/tigertext/test_commons master
 
 
 ERLC_OPTS := +debug_info +"{cover_enabled, true}"

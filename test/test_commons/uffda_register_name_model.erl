@@ -7,7 +7,7 @@
 -behaviour(scenev).
 
 -export([
-         get_all_test_model_ids/0,
+         retrieve_sources/0,
          deduce_expected/1,
          transform_raw_scenario/2,
          translate_dsl/1,
@@ -20,13 +20,13 @@
 
 -define(EVENTS, [which_services, register, which_services, unregister, which_services]).
 
--spec get_all_test_model_ids() -> [{Model_Id :: scenev_model_id(), Source :: scenev_source()}].
+-spec retrieve_sources() -> [{Model_Id :: scenev_model_id(), Source :: scenev_source()}].
 %% @doc
 %%   Test models are stored as static data files containing atom names to be
 %%   registered as an Uffda Service Name. Each test model is stored in a file
 %%   named after its model id.
 %% @end
-get_all_test_model_ids() ->
+retrieve_sources() ->
     Dir = code:priv_dir(uffda) ++ "/register_name_models/",
     [{filename:rootname(Dir), {dir, Dir}}].
 
