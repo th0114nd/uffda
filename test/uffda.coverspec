@@ -1,9 +1,14 @@
 {export, "./uffda/logs/cover"}.
 {level, details}.
-{incl_dirs, ["src/"]}.
 {incl_mods, [
-            uffda_service_fsm,
-            uffda_registry_sup,
+            uffda,
+            uffda_api_sup,
             uffda_client,
-            uffda
+            uffda_pid_publisher,
+            uffda_registry_sup,
+            uffda_rest_handler,
+            uffda_root_sup,
+            uffda_service_fsm,
+            uffda_sse_publisher,
+            uffda_subscription
             ]}.

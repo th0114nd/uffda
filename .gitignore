@@ -18,5 +18,6 @@ relx
 *.plt
 *.png
 *.log
+*.swp
 erl_crash.dump
 .erlang.mk.packages.*

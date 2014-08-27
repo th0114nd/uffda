@@ -19,7 +19,7 @@
 -behavior(application).
 
 -export([start/0, stop/0]).
--export([start/2, stop/1]).
+-export([start/2, start_phase/3, prep_stop/1, stop/1]).
 
 %%-------------------------------------------------------------------
 %% ADMIN API
@@ -35,7 +35,8 @@ start() -> application:start(?MODULE).
 %%   Stops the 'uffda' application from the shell.
 %% @end
 -spec stop() -> ok.
-stop() -> application:stop(?MODULE).
+stop() ->
+    application:stop(?MODULE).
 
 
 %%-------------------------------------------------------------------
@@ -47,7 +48,21 @@ stop() -> application:stop(?MODULE).
 %% @end
 -spec start(any(), any()) -> {ok, pid()}.
 start(_StartType, _StartArgs) -> 
-    uffda_root_sup:start_link([service_registry, rest_api]).
+    uffda_root_sup:start_link().
+
+start_phase(listen, _, _) ->
+    Dispatch = cowboy_router:compile([
+        {'_', [
+            {<<"/uffda-services/[:name]">>, uffda_rest_handler, []}
+            ]}
+        ]),
+    {ok, _} = cowboy:start_http(http, 10, [{port, 8000}], [
+        {env, [{dispatch, Dispatch}]}]),
+    ct:log("Starting..."),
+    ok.
+
+prep_stop(_State) ->
+    cowboy:stop_listener(http).
 
 %% @doc
 %%   Stops the application in an OTP environment.
