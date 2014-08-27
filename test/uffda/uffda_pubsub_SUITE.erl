@@ -31,7 +31,7 @@ end_per_testcase(_TestCase, _Config) ->
 easy(_Config) ->
     ct:comment("Basic functionality"),
     ok = uffda_subscription:subscribe(pid, self(), foo),
-    uffda_client:register_service(foo),
+    ok = uffda_client:register_service(foo),
     Expect = fun(Msg) ->
                 receive
                     Msg -> ok
