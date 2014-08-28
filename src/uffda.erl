@@ -21,6 +21,8 @@
 -export([start/0, stop/0]).
 -export([start/2, start_phase/3, prep_stop/1, stop/1]).
 
+-include("uffda.hrl").
+
 %%-------------------------------------------------------------------
 %% ADMIN API
 %%-------------------------------------------------------------------
@@ -72,11 +74,12 @@ start_phase(listen, _, _) ->
         ]),
     {ok, _} = cowboy:start_http(http, 10, [{port, 8000}], [
         {env, [{dispatch, Dispatch}]}]),
-    ct:log("Starting..."),
     ok.
 
 prep_stop(_State) ->
-    cowboy:stop_listener(http).
+    _ = [gen_event:delete_handler(?PUBLISH_MGR, Handler, stop) || Handler <- gen_event:which_handlers(?PUBLISH_MGR)],
+    ok = cowboy:stop_listener(http),
+    gen_event:stop(?PUBLISH_MGR).
 
 %% @doc
 %%   Stops the application in an OTP environment.
