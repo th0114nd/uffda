@@ -65,8 +65,8 @@ Additional room for improvement would be
 
 + reading a list of subscribers from a static file:
 
-    {email, "tholland@tigertext.com", baz}.
-    {sms, "9178576309", baz}.
-    {sms, "5559991234", bar}.
+        {email, "tholland@tigertext.com", baz}.
+        {sms, "9178576309", baz}.
+        {sms, "5559991234", bar}.
 
 + Subscriptions added/revoked over HTTP
