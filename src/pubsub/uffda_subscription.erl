@@ -48,7 +48,7 @@ subscribe(Sub_Type, Return_Address, Service, Status)
 unsubscribe(Sub_Type, Return_Address, Service)
   when is_atom(Sub_Type), is_atom(Service) ->
     {Id, _Mass} = find_vars(Sub_Type, Return_Address, Service, nonexistent),
-    gen_event:delete_handler(?PUBLISH_MGR, {uffda_publisher, Id}, {}).
+    gen_event:delete_handler(?PUBLISH_MGR, {uffda_publisher, Id}, stop).
 
 -spec notify(service_name(), service_status()) -> ok.
 notify(Service, Status)

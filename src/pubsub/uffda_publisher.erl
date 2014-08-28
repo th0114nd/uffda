@@ -35,7 +35,7 @@ handle_info(_Msg, Mass) ->
 code_change(_OldVsn, Mass, _Extra) ->
     {ok, Mass}.
 
--spec terminate({}, {module(), ass()}) -> ok.
-terminate({}, {Module, Ass}) ->
+-spec terminate(stop, {module(), ass()}) -> ok.
+terminate(stop, {Module, Ass}) ->
     Module:send(unsubscribing, Ass), 
     ok.

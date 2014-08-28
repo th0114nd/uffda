@@ -1,6 +1,6 @@
 PROJECT = uffda
 
-DEPS = cowboy eper
+DEPS = cowboy eper jiffy
 
 V = 0
 
