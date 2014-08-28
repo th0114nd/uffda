@@ -45,5 +45,5 @@
 -type address() :: pid() | string().
 -record(ass, {address :: address(),
               service :: service_name(),
-              status :: service_status()}).
+              status :: nonexistent | service_status()}).
 -type ass() :: #ass{}.

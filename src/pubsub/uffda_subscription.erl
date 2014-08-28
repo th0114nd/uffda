@@ -13,7 +13,7 @@
 start_link() ->
     gen_event:start_link({local, ?PUBLISH_MGR}).
 
--spec find_vars(sub_type(), address(), service_name(), service_status()) ->
+-spec find_vars(sub_type(), address(), service_name(), nonexistent | service_status()) ->
     {{module(), address(), service_name()}, state()}.
 find_vars(Sub_Type, Address, Service, Status)
   when is_atom(Sub_Type), is_list(Address) or is_pid(Address), is_atom(Service), is_atom(Status) ->
@@ -47,7 +47,7 @@ subscribe(Sub_Type, Return_Address, Service, Status)
 -spec unsubscribe(sub_type(), address(), service_name()) -> ok.
 unsubscribe(Sub_Type, Return_Address, Service)
   when is_atom(Sub_Type), is_atom(Service) ->
-    {Id, _Mass} = find_vars(Sub_Type, Return_Address, Service, undef),
+    {Id, _Mass} = find_vars(Sub_Type, Return_Address, Service, nonexistent),
     gen_event:delete_handler(?PUBLISH_MGR, {uffda_publisher, Id}, {}).
 
 -spec notify(service_name(), service_status()) -> ok.
