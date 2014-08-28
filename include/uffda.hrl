@@ -31,3 +31,19 @@
             __Uffda_Pid when is_pid(__Uffda_Pid) ->
                 __Action
         end).
+
+-define(PUBLISH_MGR, uffda_publish_manager).
+
+-type sub_type() :: pid | sse | email | text.
+
+-type event() :: subscription_starting | updating | unsubscribe.
+
+-type call() :: report_subscriber.
+
+-type state() :: {module(), ass()}.
+
+-type address() :: pid() | string().
+-record(ass, {address :: address(),
+              service :: service_name(),
+              status :: service_status()}).
+-type ass() :: #ass{}.

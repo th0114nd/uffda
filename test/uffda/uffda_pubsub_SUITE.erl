@@ -30,18 +30,23 @@ end_per_testcase(_TestCase, _Config) ->
 %% @end
 easy(_Config) ->
     ct:comment("Basic functionality"),
-    ok = uffda_subscription:subscribe(pid, self(), foo),
-    ok = uffda_client:register_service(foo),
     Expect = fun(Msg) ->
                 receive
-                    Msg -> ok
+                    Msg -> ok;
+                    Other -> ct:log("Unexpected:~n~p~nvs~n~p", [Msg, Other]),
+                             "Unexpected"
                  after
                     100 -> "Msg not received"
                  end
              end, 
-    ok = Expect({update, {foo, registered}}),
+    ok = uffda_subscription:subscribe(pid, self(), foo),
+    ok = Expect({subscription_starting, {foo, nonexistent}}), 
+    ok = uffda_client:register_service(foo),
+    ok = Expect({updating, {foo, registered}}),
     ok = uffda_client:set_service_online(foo),
-    ok = Expect({update, {foo, up}}),
+    ok = Expect({updating, {foo, up}}),
     ok = uffda_client:set_service_offline(foo),
-    ok = Expect({update, {foo, down}}).
+    ok = Expect({updating, {foo, down}}),
+    ok = uffda_subscription:unsubscribe(pid, self(), foo),
+    ok = Expect({unsubscribing, {foo, down}}).
 

@@ -72,7 +72,6 @@ start_phase(listen, _, _) ->
         ]),
     {ok, _} = cowboy:start_http(http, 10, [{port, 8000}], [
         {env, [{dispatch, Dispatch}]}]),
-    ct:log("Starting..."),
     ok.
 
 prep_stop(_State) ->

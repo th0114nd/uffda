@@ -2,40 +2,57 @@
 
 -export([start_link/0,
          subscribe/3,
+         subscribe/4,
          unsubscribe/3,
          notify/2]).
 
+-author('tholland@tigertext.com').
 -include("uffda.hrl").
--include("uffda_sub.hrl").
+
+-type maybe(A) :: A | undef.
 
 -spec start_link() -> {ok, pid()} | {error, {already_started, pid()}}.
 start_link() ->
     gen_event:start_link({local, ?PUBLISH_MGR}).
 
--spec find_vars(sub_type(), address(), service_name()) -> {state(), {atom(), term()}}.
-find_vars(Sub_Type, Return_Address, Service)
-  when is_atom(Sub_Type), is_atom(Service) ->
-    {Updated_Return, CB_Module} = case Sub_Type of
-        pid -> {Return_Address, uffda_pid_publisher};
-        sse -> {self(), uffda_pid_publisher};
-        email -> {Return_Address, uffda_email_publisher}
+-spec find_vars(sub_type(), address(), service_name(), maybe(service_status())) ->
+    {{module(), address(), service_name()}, state()}.
+find_vars(Sub_Type, Address, Service, Status)
+  when is_atom(Sub_Type), is_list(Address) or is_pid(Address), is_atom(Service), is_atom(Status) ->
+    Module = case Sub_Type of
+        pid -> uffda_pid_sender;
+        sse -> uffda_pid_sender;
+        email -> uffda_email_sender;
+        sms -> uffda_sms_sender
         end,
-    Id = State = {Updated_Return, Service},
-    {State, {CB_Module, Id}}.
+    Ass = #ass{address = Address,
+               service = Service,
+               status = Status},
+    Mass = {Module, Ass},
+    Id = {Module, Address, Service}, 
+    {Id, Mass}.
 
--spec subscribe(sub_type(), address(), service_name()) -> ok.
-subscribe(Sub_Type, Return_Address, Service)
+-spec subscribe(sub_type(), address(), service_name()) -> ok | {error, any()}.
+subscribe(Sub_Type, Return_Address, Service) ->
+    Status = case uffda_client:service_status(Service) of
+        Stat when is_atom(Stat) -> Stat;
+        {error, _} -> undef
+        end,
+    subscribe(Sub_Type, Return_Address, Service, Status).
+    
+-spec subscribe(sub_type(), address(), service_name(), maybe(service_status())) -> ok.
+subscribe(Sub_Type, Return_Address, Service, Status)
   when is_atom(Sub_Type), is_atom(Service)->
-    {State, Handler} = find_vars(Sub_Type, Return_Address, Service),
-    gen_event:add_handler(?PUBLISH_MGR, Handler, State).
+    {Id, Mass} = find_vars(Sub_Type, Return_Address, Service, Status),
+    gen_event:add_handler(?PUBLISH_MGR, {uffda_publisher, Id}, Mass).
 
--spec unsubscribe(sub_type(), address(), service_name()) -> term().
+-spec unsubscribe(sub_type(), address(), service_name()) -> ok.
 unsubscribe(Sub_Type, Return_Address, Service)
   when is_atom(Sub_Type), is_atom(Service) ->
-    {_State, Handler} = find_vars(Sub_Type, Return_Address, Service),
-    gen_event:delete_handler(?PUBLISH_MGR, Handler, {}).
+    {Id, _Mass} = find_vars(Sub_Type, Return_Address, Service, undef),
+    gen_event:delete_handler(?PUBLISH_MGR, {uffda_publisher, Id}, {}).
 
--spec notify(service_name(), service_status()) -> ok.
+-spec notify(service_name(), maybe(service_status())) -> ok.
 notify(Service, Status)
   when is_atom(Service), is_atom(Status) ->
     gen_event:notify(?PUBLISH_MGR, {publish, Service, Status}).

@@ -11,7 +11,7 @@ init(_Transport, Req, []) ->
     ok = cowboy_req:chunk(["event: subscription-start\n",
                       "id: ", atom_to_list(Name), "\n",
                       "data: ", atom_to_list(Status), "\n\n"], Req3),
-    uffda_subscription:subscribe(sse, self(), Name), 
+    uffda_subscription:subscribe(sse, self(), Name, Status), 
     {loop, Req3, Name}.
 
 info({update, {Name, Status}}, Req, Name) ->
