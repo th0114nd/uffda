@@ -15,8 +15,7 @@ start_link() ->
 
 -spec find_vars(sub_type(), address(), service_name(), nonexistent | service_status()) ->
     {{module(), address(), service_name()}, state()}.
-find_vars(Sub_Type, Address, Service, Status)
-  when is_atom(Sub_Type), is_list(Address) or is_pid(Address), is_atom(Service), is_atom(Status) ->
+find_vars(Sub_Type, Address, Service, Status) ->
     Module = case Sub_Type of
         pid -> uffda_pid_sender;
         sse -> uffda_pid_sender;
@@ -34,8 +33,7 @@ find_vars(Sub_Type, Address, Service, Status)
 subscribe(Sub_Type, Address, Service) ->
     Status = case uffda_client:service_status(Service) of
         Stat when is_atom(Stat) -> Stat;
-        {error, _} -> nonexistent;
-        Unexpected -> {error, {unexpected, Unexpected}}
+        {error, _} -> nonexistent
         end,
     subscribe(Sub_Type, Address, Service, Status).
     
