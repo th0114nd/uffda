@@ -31,7 +31,7 @@ Publish & Subscribe
 -------------------
 Uffda has support for subscribing to particular services and receiving
 notifications over several mediums when state changes for those services. To
-subscribe to an SSE stream, hit the endpoint `/subscribe/:service_nam` with an
+subscribe to an SSE stream, hit the endpoint `/subscribe/:service_name` with an
 HTTP request.
 
 [put image here]
