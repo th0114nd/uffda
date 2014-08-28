@@ -1,6 +1,6 @@
 PROJECT = uffda
 
-DEPS = cowboy eper
+DEPS = cowboy eper jiffy
 
 V = 0
 
@@ -14,7 +14,7 @@ ERLC_OPTS := +debug_info +"{cover_enabled, true}"
 # Needed for testing
 TEST_ERLC_OPTS := -I include $(ERLC_OPTS)
 CT_OPTS := -cover test/uffda.coverspec
-CT_SUITES := uffda_basic uffda_registry uffda_service uffda_system uffda_pubsub
+CT_SUITES := uffda_pubsub uffda_basic uffda_registry uffda_service uffda_system uffda_pubsub
 
 DIALYZER_OPTS := -I include test/uffda -Werror_handling -Wrace_conditions -Wunmatched_returns
 
