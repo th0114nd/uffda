@@ -54,7 +54,7 @@ callback with the following signature.
 Such a callback is expected to be defined with the behaviour `uffda_publisher`
 declared. An example for sending emails with the unix `mail` command is shown below:
 
-[![Imgur](http://i.imgur.com/fUvZhiW.png)](http://i.imgur.com/fUvZhiW.png)
+[![Imgur](http://i.imgur.com/JoeRXub.png)](http://imgur.com/JoeLXub)
 
 There is also a need to edit the `find_vars` function in `src/pubsub/uffda_subscription.erl`
 to accomodate further behaviours.
