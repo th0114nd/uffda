@@ -11,5 +11,5 @@ send(Event, #ass{address = Address,
                  status = Status})
   when is_atom(Event), is_list(Address), is_atom(Service), is_atom(Status) ->
     [Event_String, Service_String, Status_String] = [atom_to_list(Item) || Item <- [Event, Service, Status]],
-    "" = os:cmd(["echo ", Service_String, " ", Status_String, " | mail -s 'uffda ", Event_String, "' ", Address]),
+    "" = os:cmd(io_lib:format("echo ~s ~s | mail -s 'uffda/~s' ~s", [Service_String, Status_String, Event_String, Address]),
     ok. 
