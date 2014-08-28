@@ -31,23 +31,24 @@ find_vars(Sub_Type, Address, Service, Status)
     {Id, Mass}.
 
 -spec subscribe(sub_type(), address(), service_name()) -> ok | {error, any()}.
-subscribe(Sub_Type, Return_Address, Service) ->
+subscribe(Sub_Type, Address, Service) ->
     Status = case uffda_client:service_status(Service) of
         Stat when is_atom(Stat) -> Stat;
-        {error, _} -> nonexistent
+        {error, _} -> nonexistent;
+        Unexpected -> {error, {unexpected, Unexpected}}
         end,
-    subscribe(Sub_Type, Return_Address, Service, Status).
+    subscribe(Sub_Type, Address, Service, Status).
     
 -spec subscribe(sub_type(), address(), service_name(), service_status()) -> ok.
-subscribe(Sub_Type, Return_Address, Service, Status)
-  when is_atom(Sub_Type), is_atom(Service)->
-    {Id, Mass} = find_vars(Sub_Type, Return_Address, Service, Status),
+subscribe(Sub_Type, Address, Service, Status)
+  when is_atom(Sub_Type), is_list(Address) or is_pid(Address), is_atom(Service), is_atom(Status) ->
+    {Id, Mass} = find_vars(Sub_Type, Address, Service, Status),
     gen_event:add_handler(?PUBLISH_MGR, {uffda_publisher, Id}, Mass).
 
 -spec unsubscribe(sub_type(), address(), service_name()) -> ok.
-unsubscribe(Sub_Type, Return_Address, Service)
-  when is_atom(Sub_Type), is_atom(Service) ->
-    {Id, _Mass} = find_vars(Sub_Type, Return_Address, Service, nonexistent),
+unsubscribe(Sub_Type, Address, Service)
+  when is_atom(Sub_Type), is_list(Address) or is_pid(Address), is_atom(Service) ->
+    {Id, _Mass} = find_vars(Sub_Type, Address, Service, nonexistent),
     gen_event:delete_handler(?PUBLISH_MGR, {uffda_publisher, Id}, stop).
 
 -spec notify(service_name(), service_status()) -> ok.

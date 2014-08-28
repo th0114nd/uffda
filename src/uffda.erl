@@ -77,8 +77,6 @@ start_phase(listen, _, _) ->
     ok.
 
 prep_stop(_State) ->
-    ranch:set_max_connectinos(http, 0),
-    %% Ibrowse check here
     _ = [gen_event:delete_handler(?PUBLISH_MGR, Handler, stop) || Handler <- gen_event:which_handlers(?PUBLISH_MGR)],
     ok = cowboy:stop_listener(http),
     gen_event:stop(?PUBLISH_MGR).
