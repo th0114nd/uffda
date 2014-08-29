@@ -16,7 +16,5 @@ send(Event, #ass{address = Address,
     Cmd = io_lib:format("curl -u ~s:~s -vX POST https://api.tigertext.me/v2/message "
                         "-H \"Content-Type:application/x-www-form-urlencoded\" "
                         "-d \"recipient=~s&ttl=1440&body=~s\" ", [Key, Secret, Target, Msg]),
-    error_logger:info_msg("Cmd: ~s", [lists:flatten(Cmd)]),
     Output = os:cmd(Cmd),
-    error_logger:error_msg("Output: ~s", [Output]),
     ok.
