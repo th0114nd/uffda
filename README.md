@@ -69,7 +69,10 @@ it will be `slow_restarting`.
 
 Web API
 -------
-
+Uffda has a RESTful API to facilitate a standard method of external communication.
+As noted above, queries can be done with `GET /services[/:name]` to either get
+all services or the status of the one specified by `:name`. To create a service,
+execute `PUT /services/:name`. To change the status of a service, `POST 
 
 Publish & Subscribe
 -------------------

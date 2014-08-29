@@ -55,7 +55,15 @@ start(_StartType, _StartArgs) ->
 start_phase(listen, _, _) ->
     Dispatch = cowboy_router:compile([
         {'_', [
-            {<<"/services/[:name]">>, uffda_rest_handler, []},
+            {<<"/services/[:name]">>,
+                [{name, function,
+                    fun(Bin) -> try binary_to_atom(Bin, utf8) of
+                                    Name when is_atom(Name) ->
+                                        {true, Name}
+                                 catch
+                                    _:_ -> false
+                                 end end}],
+                 uffda_rest_handler, []},
             {<<"/subscribe/:name">>, 
                 [{name, function,
                     fun(Bin) -> try binary_to_existing_atom(Bin, utf8) of
@@ -67,7 +75,6 @@ start_phase(listen, _, _) ->
                                 catch
                                     _:_-> false
                                 end end}],
-            
                 uffda_eventsource_handler,
                 []}
             ]}
