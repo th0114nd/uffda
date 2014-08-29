@@ -23,9 +23,39 @@ To check that the types are properly specified, make the plt and run dialyzer:
     $ make plt
     $ make dialyze
 
-Travis CI
------------
-Builds are also enabled through travis-ci.org
+Using Uffda to watch a particular service
+-----------------------------------
+Uffda has an architecture that expects interaction from the service when things
+are smoothly sailing, and will take reporting into it's own hands with timeouts
+and monitors when things aren't working out.
+
+In the normal pattern of starting up,`uffda_client:register_service/1` is
+called at the earliest possible point to enter the registry. Recommendations
+would be in either `$service:start/0` before `application:start/1` is called or
+as part of the `erl` command line args with `-s uffda_client register_service
+$service` before `-s $service`.
+
+Next would be `uffda_client:starting_service/{1,2}`, which indicates that the
+startup sequence has initiated and creates a monitor that lets uffda watch for
+the service going down.  Suggested callpoint would be in the `$service:start/2`
+callback for `application`, i.e. once the services code has begun executing.
+
+To indicate that startup has completed successfully, calling
+`uffda_client:set_service_online/1` is expected. If the timeout is reached
+before this is called, the internal state will move to `slow_start`, but will
+transition to `up` if it is called eventually.
+
+If the service has to voluntarily go down, the function
+`uffda_client:set_service_offline/1` will move the internal state to `down`.
+Alternatively, if the service's process (the pid that has called
+`starting_service/1` or the second argument to `starting_service/2`) exits the
+monitor will transition the state accordingly. If the reason for the monitor
+`'DOWN'` message to fire is `normal`, the fsm will move to `down` otherwise to
+`crashed`.
+
+When the service tries to right itself again with another call to starting
+service, the internal state will be `restarting`, and similarly if it times out
+it will be `slow_restarting`.
 
 Publish & Subscribe
 -------------------
