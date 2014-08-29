@@ -39,13 +39,13 @@ subscribe(Sub_Type, Address, Service) ->
     
 -spec subscribe(sub_type(), address(), service_name(), service_status()) -> ok.
 subscribe(Sub_Type, Address, Service, Status)
-  when is_atom(Sub_Type), is_list(Address) or is_pid(Address), is_atom(Service), is_atom(Status) ->
+  when is_atom(Sub_Type), is_list(Address) or is_pid(Address) or is_tuple(Address), is_atom(Service), is_atom(Status) ->
     {Id, Mass} = find_vars(Sub_Type, Address, Service, Status),
     gen_event:add_handler(?PUBLISH_MGR, {uffda_publisher, Id}, Mass).
 
 -spec unsubscribe(sub_type(), address(), service_name()) -> ok.
 unsubscribe(Sub_Type, Address, Service)
-  when is_atom(Sub_Type), is_list(Address) or is_pid(Address), is_atom(Service) ->
+  when is_atom(Sub_Type), is_list(Address) or is_pid(Address) or is_tuple(Address), is_atom(Service) ->
     {Id, _Mass} = find_vars(Sub_Type, Address, Service, nonexistent),
     gen_event:delete_handler(?PUBLISH_MGR, {uffda_publisher, Id}, stop).
 
