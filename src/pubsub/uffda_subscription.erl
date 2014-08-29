@@ -3,7 +3,7 @@
 -export([start_link/0,
          subscribe/3,
          subscribe/4,
-         subscribe_list/2,
+         subscribe_file/2,
          unsubscribe/3,
          notify/2]).
 
@@ -45,8 +45,8 @@ subscribe(Sub_Type, Address, Service, Status)
     {Id, Mass} = find_vars(Sub_Type, Address, Service, Status),
     gen_event:add_handler(?PUBLISH_MGR, {uffda_publisher, Id}, Mass).
 
--spec subscribe_list(file:name_all(), service_name()) -> ok.
-subscribe_list(File_Name, Service) ->
+-spec subscribe_file(file:name_all(), service_name()) -> ok.
+subscribe_file(File_Name, Service) ->
     Subscribers = file:consult(File_Name),
     [subscribe(Type, Address, Service) || {Type, Address} <- Subscribers].
 
