@@ -79,13 +79,14 @@ start_phase(listen, _, _) ->
                 []}
             ]}
         ]),
-    {ok, _} = cowboy:start_http(http, 10, [{port, 8000}], [
+    {ok, _} = cowboy:start_http(uffda_http, 10, [{port, 8000}], [
         {env, [{dispatch, Dispatch}]}]),
     ok.
 
 prep_stop(_State) ->
-    _ = [gen_event:delete_handler(?PUBLISH_MGR, Handler, stop) || Handler <- gen_event:which_handlers(?PUBLISH_MGR)],
-    ok = cowboy:stop_listener(http),
+    _ = [gen_event:delete_handler(?PUBLISH_MGR, Handler, stop) ||
+            Handler <- gen_event:which_handlers(?PUBLISH_MGR)],
+    ok = cowboy:stop_listener(uffda_http),
     gen_event:stop(?PUBLISH_MGR).
 
 %% @doc
