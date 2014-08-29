@@ -73,7 +73,7 @@ start_phase(listen, _, _) ->
                                             {error, _} -> false
                                         end
                                 catch
-                                    _:_-> false
+                                    _:_-> {true, {binary_to_atom(Bin, utf8), nonexistent}}
                                 end end}],
                 uffda_eventsource_handler,
                 []}

@@ -20,7 +20,8 @@ find_vars(Sub_Type, Address, Service, Status) ->
         pid -> uffda_pid_sender;
         sse -> uffda_pid_sender;
         email -> uffda_email_sender;
-        sms -> uffda_sms_sender
+        sms -> uffda_sms_sender;
+        tigertext -> uffda_tigertext_sender
         end,
     Ass = #ass{address = Address,
                service = Service,
