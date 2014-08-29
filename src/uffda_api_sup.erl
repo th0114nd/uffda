@@ -10,8 +10,7 @@
 start_link() ->
     supervisor:start_link({local, ?SERVER}, ?MODULE, {}).
 
--type restart() :: {supervisor:strategy(), non_neg_integer(), non_neg_integer()}.
--spec init({}) -> {'ok',{restart(), [?SUPER(module())]}}.
+-type restart() :: {supervisor:strategy(), non_neg_integer(), non_neg_integer()}.  -spec init({}) -> {'ok',{restart(), [?SUPER(module())]}}.
 init({}) ->
     Ranch_Sup = ?SUPER(ranch_sup),
     Cowboy_Sup = ?SUPER(cowboy_sup),
