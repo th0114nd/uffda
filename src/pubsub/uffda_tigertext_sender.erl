@@ -11,7 +11,7 @@ send(Event, #ass{address = Address,
                  status = Status})
   when is_atom(Event), is_tuple(Address), is_atom(Service), is_atom(Status) ->
     [Event_String, Service_String, Status_String] = [atom_to_list(Item) || Item <- [Event, Service, Status]],
-    {Key, Secret, Target} = Address
+    {Key, Secret, Target} = Address,
     Msg = io_lib:format("uffda/~s: Service ~s is now ~s", [Event_String, Service_String, Status_String]),
     Cmd = io_lib:format("curl -u ~s:~s -vX POST https://api.tigertext.me/v2/message "
                         "-H \"Content-Type:application/x-www-form-urlencoded\" "
