@@ -47,8 +47,10 @@ subscribe(Sub_Type, Address, Service, Status)
 
 -spec subscribe_file(file:name_all(), service_name()) -> ok.
 subscribe_file(File_Name, Service) ->
-    Subscribers = file:consult(File_Name),
-    [subscribe(Type, Address, Service) || {Type, Address} <- Subscribers].
+    case file:consult(File_Name) of
+        {ok, Subscribers} -> [subscribe(Type, Address, Service) || {Type, Address} <- Subscribers], ok;
+        _ -> error_logger:error_msg("Could not read subscribers from ~s", [File_Name])
+    end.
 
 -spec unsubscribe(sub_type(), address(), service_name()) -> ok.
 unsubscribe(Sub_Type, Address, Service)
