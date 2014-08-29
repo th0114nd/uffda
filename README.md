@@ -10,11 +10,14 @@ of nuances, and covering a variety of situations." The name was chosen to
 reflect the feelings that may result from service outages, and hopefully this
 project will provide insight to better track outage and availability of services.
 
+Running uffda requires erlang version R16B03-1.
+
 Testing
 -------
+
 In order to run tests, clone and hit make:
 
-    $ git clone https://github.com/tigertext/uffda
+    $ git clone https://github.com/pierce-m/uffda
     $ cd uffda
     $ make tests
 
