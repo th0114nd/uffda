@@ -21,6 +21,8 @@ DIALYZER_OPTS := -I include test/uffda -Werror_handling -Wrace_conditions -Wunma
 EDOC_DIRS := ["src", "examples", "test/uffda", "test/test_commons"]
 EDOC_OPTS := {preprocess, true}, {source_path, ${EDOC_DIRS}}, nopackages, {subpackages, true}
 
+RELX_OPTS := -p ../
+
 ERL_PATH := -pa ../uffda/ebin deps/*/ebin 
 SERVER := erl -smp enable $(ERL_PATH)
 
