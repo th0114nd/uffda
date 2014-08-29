@@ -10,8 +10,6 @@ of nuances, and covering a variety of situations." The name was chosen to
 reflect the feelings that may result from service outages, and hopefully this
 project will provide insight to better track outage and availability of services.
 
-Running uffda requires erlang version R16B03-1.
-
 Testing
 -------
 
